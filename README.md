@@ -1,3 +1,25 @@
+# Required tools
+1. AWS CLI
+
+
+
+# Steps to follow for setup
+1. aws configure 
+2. aws sts get-caller-identity
+    - to check that configure worked
+3. check that template.yaml is testing
+4. sam deploy
+    - sam deploy --guided
+```
+# Stack name: matchmaking-engine
+# Region: us-east-1
+# Confirm changes: Y
+# Allow SAM to create roles: Y
+# Save config: Y  ← creates samconfig.toml, commit this file
+```
+WIP...
+
+
 # AWS Multiplayer Matchmaking Engine: Roadmap & Implementation
 
 This roadmap is designed for a **$50 budget**, leveraging serverless components and AWS Free Tier where possible.

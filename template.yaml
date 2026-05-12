@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Multiplayer Matchmaking Engine
+
+Globals:
+  Function:
+    Runtime: nodejs18.x
+    Timeout: 30
+    Environment:
+      Variables:
+        PLAYER_TABLE: !Ref PlayerProfilesTable
+        TICKETS_TABLE: !Ref MatchmakingTicketsTable
+
+Resources:
+
+  # ── DYNAMODB TABLES ──────────────────────────────────────────
+  PlayerProfilesTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: PlayerProfiles
+      BillingMode: PAY_PER_REQUEST   # On-Demand = pay per hit
+      AttributeDefinitions:
+        - AttributeName: UserId
+          AttributeType: S           # S = String
+      KeySchema:
+        - AttributeName: UserId
+          KeyType: HASH              # HASH = Partition Key
+
+  MatchmakingTicketsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MatchmakingTickets
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: TicketId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: TicketId
+          KeyType: HASH
+
+  # ── COGNITO USER POOL ─────────────────────────────────────────
+  PlayerUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: MatchmakingUserPool
+      AutoVerifiedAttributes:
+        - email
+      UsernameAttributes:
+        - email
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireNumbers: false
+          RequireSymbols: false      # Keep simple for testing
+
+  PlayerUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: MatchmakingAppClient
+      UserPoolId: !Ref PlayerUserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH   # Lets you log in with email+password
+        - ALLOW_REFRESH_TOKEN_AUTH
+      GenerateSecret: false          # Must be false for client-side apps
+
+Outputs:
+  UserPoolId:
+    Value: !Ref PlayerUserPool
+    Description: Cognito User Pool ID
+
+  UserPoolClientId:
+    Value: !Ref PlayerUserPoolClient
+    Description: Cognito App Client ID
+
+  PlayerTableName:
+    Value: !Ref PlayerProfilesTable
+    Description: DynamoDB Player Profiles Table
