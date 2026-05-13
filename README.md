@@ -7,8 +7,8 @@
 1. aws configure 
 2. aws sts get-caller-identity
     - to check that configure worked
-3. check that template.yaml is testing
 4. sam deploy
+    - if it is the first time deploying and samconfig.toml file doesn't exists
     - sam deploy --guided
 ```
 # Stack name: matchmaking-engine
@@ -17,7 +17,10 @@
 # Allow SAM to create roles: Y
 # Save config: Y  ← creates samconfig.toml, commit this file
 ```
-WIP...
+5. run `scripts/seed.sh` 
+    - populate dynamodb with some players
+6. aws dynamodb scan --table-name PlayerProfiles
+    - Check that table is now populated
 
 
 # AWS Multiplayer Matchmaking Engine: Roadmap & Implementation

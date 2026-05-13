@@ -1,0 +1,24 @@
+{
+  "PlayerProfiles": [
+    {
+      "PutRequest": {
+        "Item": {
+          "UserId": { "S": "test-user-001" },
+          "ELO":    { "N": "1200" },
+          "Wins":   { "N": "10" },
+          "Losses": { "N": "5" }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "UserId": { "S": "test-user-002" },
+          "ELO":    { "N": "1350" },
+          "Wins":   { "N": "20" },
+          "Losses": { "N": "8" }
+        }
+      }
+    }
+  ]
+}
