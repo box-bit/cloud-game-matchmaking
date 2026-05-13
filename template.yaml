@@ -4,7 +4,7 @@ Description: Multiplayer Matchmaking Engine
 
 Globals:
   Function:
-    Runtime: nodejs18.x
+    Runtime: python3.12
     Timeout: 30
     Environment:
       Variables:

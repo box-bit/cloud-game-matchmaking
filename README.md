@@ -1,6 +1,6 @@
 # Required tools
 1. AWS CLI
-
+2. AWS SAM CLI
 
 
 # Steps to follow for setup
