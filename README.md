@@ -17,9 +17,9 @@
 # Allow SAM to create roles: Y
 # Save config: Y  ← creates samconfig.toml, commit this file
 ```
-5. run `scripts/seed.sh` 
+5. run `./scripts/seed-test-players.sh` 
     - populate dynamodb with some players
-6. aws dynamodb scan --table-name PlayerProfiles
+6. run `aws dynamodb scan --table-name PlayerProfiles`
     - Check that table is now populated
 
 
