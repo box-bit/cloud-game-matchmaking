@@ -44,4 +44,12 @@ mkdir -p .session
 echo "$ID_TOKEN" >.session/id_token.txt
 echo "$SUB" >.session/sub.txt
 
-echo "Both saved to .session/ for reuse in other scripts."
+API_URL=$(aws cloudformation describe-stacks \
+    --stack-name matchmaking-engine \
+    --query "Stacks[0].Outputs[?OutputKey=='ApiEndpoint'].OutputValue" \
+    --output text)
+
+echo "$API_URL" >.session/api_url.txt
+echo "API URL: $API_URL"
+
+echo "Saved to .session/ for reuse in other scripts."
