@@ -18,13 +18,13 @@ Resources:
     Type: AWS::DynamoDB::Table
     Properties:
       TableName: PlayerProfiles
-      BillingMode: PAY_PER_REQUEST   # On-Demand = pay per hit
+      BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: UserId
-          AttributeType: S           # S = String
+          AttributeType: S
       KeySchema:
         - AttributeName: UserId
-          KeyType: HASH              # HASH = Partition Key
+          KeyType: HASH
 
   MatchmakingTicketsTable:
     Type: AWS::DynamoDB::Table
@@ -38,7 +38,7 @@ Resources:
         - AttributeName: TicketId
           KeyType: HASH
 
-  # ── COGNITO USER POOL ─────────────────────────────────────────
+  # ── COGNITO ───────────────────────────────────────────────────
   PlayerUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
@@ -52,7 +52,7 @@ Resources:
           MinimumLength: 8
           RequireUppercase: false
           RequireNumbers: false
-          RequireSymbols: false      # Keep simple for testing
+          RequireSymbols: false
 
   PlayerUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -60,9 +60,40 @@ Resources:
       ClientName: MatchmakingAppClient
       UserPoolId: !Ref PlayerUserPool
       ExplicitAuthFlows:
-        - ALLOW_USER_PASSWORD_AUTH   # Lets you log in with email+password
+        - ALLOW_USER_PASSWORD_AUTH
         - ALLOW_REFRESH_TOKEN_AUTH
-      GenerateSecret: false          # Must be false for client-side apps
+      GenerateSecret: false
+
+  # ── API GATEWAY ───────────────────────────────────────────────
+  MatchmakingApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: MatchmakingAPI
+      StageName: dev
+      Auth:
+        DefaultAuthorizer: CognitoAuthorizer
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt PlayerUserPool.Arn
+
+  # ── LAMBDA FUNCTIONS ──────────────────────────────────────────
+  StartMatchmakingFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: StartMatchmaking
+      CodeUri: src/startMatchmaking/
+      Handler: index.handler
+      Tags: {}
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Events:
+        MatchApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MatchmakingApi
+            Path: /match
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
 
 Outputs:
   UserPoolId:
@@ -76,3 +107,7 @@ Outputs:
   PlayerTableName:
     Value: !Ref PlayerProfilesTable
     Description: DynamoDB Player Profiles Table
+
+  ApiEndpoint:
+    Value: !Sub "https://${MatchmakingApi}.execute-api.${AWS::Region}.amazonaws.com/dev"
+    Description: API Gateway base URL
