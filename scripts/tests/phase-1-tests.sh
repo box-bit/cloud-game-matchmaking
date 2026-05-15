@@ -176,8 +176,7 @@ echo -e "  ${RED}Failed  : $FAILED${NC}"
 echo ""
 
 if [ "$FAILED" = "0" ]; then
-    echo -e "${GREEN}  🎉 All tests passed. Phase 1 & 2 are working correctly.${NC}"
-    echo -e "${GREEN}     Ready to move on to Phase 3 (FlexMatch).${NC}"
+    echo -e "${GREEN}  All tests passed. Phase 1 & 2 are working correctly.${NC}"
 else
     echo -e "${RED}  ⚠️  Some tests failed. Check the output above.${NC}"
     echo -e "${YELLOW}     Tip: run 'sam logs -n StartMatchmaking --tail' to stream CloudWatch logs.${NC}"
