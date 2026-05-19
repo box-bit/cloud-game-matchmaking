@@ -5,6 +5,7 @@
 
 # Steps to follow for setup
 1. aws configure 
+    - or you can copy-paste into $HOME/.aws/credentials the new credentials that aws gives you everytime you start a new session
 2.  run `aws sts get-caller-identity`
     - to check that configure worked
 4. sam deploy
@@ -19,7 +20,9 @@
 ```
 
 5. run `./scripts/create-cognito-test-users.sh`
+    - this will create an user in the cognito aws service
 6. run `./scripts/get-token.sh`
+    - this will retrieve the token related to the user created in cognito, everything will be found in the .session folder
 7. run `./scripts/seed-test-players.sh`
     - run `aws dynamodb scan --table-name PlayerProfiles`
     - Check that table is now populated
