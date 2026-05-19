@@ -5,7 +5,7 @@
 
 # Steps to follow for setup
 1. aws configure 
-2. aws sts get-caller-identity
+2.  run `aws sts get-caller-identity`
     - to check that configure worked
 4. sam deploy
     - if it is the first time deploying and samconfig.toml file doesn't exists
@@ -17,9 +17,11 @@
 # Allow SAM to create roles: Y
 # Save config: Y  ← creates samconfig.toml, commit this file
 ```
-5. run `./scripts/seed-test-players.sh` 
-    - populate dynamodb with some players
-6. run `aws dynamodb scan --table-name PlayerProfiles`
+
+5. run `./scripts/create-cognito-test-users.sh`
+6. run `./scripts/get-token.sh`
+7. run `./scripts/seed-test-players.sh`
+    - run `aws dynamodb scan --table-name PlayerProfiles`
     - Check that table is now populated
 
 
