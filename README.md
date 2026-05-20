@@ -27,6 +27,9 @@
     - run `aws dynamodb scan --table-name PlayerProfiles`
     - Check that table is now populated
 
+8. `./scripts/tests/phase-3-tests.sh`
+    - For a real match to complete you need two authenticated players submitting tickets
+    - monitor with `sam logs -n MatchStatusPoller --tail`
 
 # AWS Multiplayer Matchmaking Engine: Roadmap & Implementation
 
