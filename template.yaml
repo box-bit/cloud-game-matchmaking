@@ -249,6 +249,7 @@ Resources:
       FunctionName: MatchStatusPoller
       CodeUri: src/matchStatusPoller/
       Handler: index.handler
+      Timeout: 55
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
       Environment:
         Variables:
