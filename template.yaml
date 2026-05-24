@@ -73,11 +73,17 @@ Resources:
     Properties:
       Name: MatchmakingAPI
       StageName: dev
+      Cors:
+        AllowOrigin: "'*'"
+        AllowHeaders: "'Authorization,Content-Type'"
+        AllowMethods: "'GET,POST,DELETE,OPTIONS'"
       Auth:
         DefaultAuthorizer: CognitoAuthorizer
         Authorizers:
           CognitoAuthorizer:
             UserPoolArn: !GetAtt PlayerUserPool.Arn
+        # CORS preflight requests carry no auth header — let them through.
+        AddDefaultAuthorizerToCorsPreflight: false
 
 
   # ── GAME SERVER (EC2) ─────────────────────────────────────────
@@ -180,6 +186,44 @@ Resources:
           Properties:
             RestApiId: !Ref MatchmakingApi
             Path: /match/{ticketId}
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  RegisterUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: RegisterUser
+      CodeUri: src/registerUser/
+      Handler: index.handler
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Environment:
+        Variables:
+          USER_POOL_ID: !Ref PlayerUserPool
+          USER_POOL_CLIENT_ID: !Ref PlayerUserPoolClient
+      Events:
+        RegisterApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MatchmakingApi
+            Path: /register
+            Method: POST
+            Auth:
+              Authorizer: NONE
+
+  GetProfileFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: GetProfile
+      CodeUri: src/getProfile/
+      Handler: index.handler
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Events:
+        GetProfileApi:
+          Type: Api
+          Properties:
+            RestApiId: !Ref MatchmakingApi
+            Path: /profile
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer

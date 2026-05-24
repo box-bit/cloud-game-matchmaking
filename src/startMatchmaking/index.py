@@ -10,6 +10,20 @@ logger.setLevel(logging.INFO)
 
 dynamo = boto3.resource("dynamodb")
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Authorization,Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
+
+
+def _response(status, body):
+    return {
+        "statusCode": status,
+        "headers": CORS_HEADERS,
+        "body": json.dumps(body),
+    }
+
 
 def handler(event, context):
     try:
@@ -22,10 +36,7 @@ def handler(event, context):
 
         if "Item" not in response:
             logger.warning(f"No profile found for UserId: {user_id}")
-            return {
-                "statusCode": 404,
-                "body": json.dumps({"error": "Player profile not found"}),
-            }
+            return _response(404, {"error": "Player profile not found"})
 
         player = response["Item"]
         elo = int(player["ELO"])
@@ -47,29 +58,21 @@ def handler(event, context):
         )
         logger.info(f"Ticket created: {ticket_id}")
 
-        return {
-            "statusCode": 200,
-            "body": json.dumps(
-                {
-                    "message": "Matchmaking started",
-                    "userId": user_id,
-                    "elo": elo,
-                    "ticketId": ticket_id,
-                    "status": "SEARCHING",
-                }
-            ),
-        }
+        return _response(
+            200,
+            {
+                "message": "Matchmaking started",
+                "userId": user_id,
+                "elo": elo,
+                "ticketId": ticket_id,
+                "status": "SEARCHING",
+            },
+        )
 
     except KeyError as e:
         logger.error(f"Missing expected field: {e}")
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"error": f"Missing field: {str(e)}"}),
-        }
+        return _response(400, {"error": f"Missing field: {str(e)}"})
 
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
-        return {
-            "statusCode": 500,
-            "body": json.dumps({"error": "Internal server error"}),
-        }
+        return _response(500, {"error": "Internal server error"})
