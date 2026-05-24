@@ -36,7 +36,12 @@
 ./scripts/push-game-server.sh
 ```
 
-10. Scale up the warm pool so 2 game server containers are always ready:
+10. Run ./scripts/deploy-ui.sh to deploy minimalistic frontend
+```bash
+./scripts/deploye-ui.sh
+```
+
+12. Scale up the warm pool so 2 game server containers are always ready:
 ```bash
 aws ecs update-service \
   --cluster matchmaking-engine-game-servers \
