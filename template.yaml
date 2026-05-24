@@ -86,55 +86,143 @@ Resources:
         AddDefaultAuthorizerToCorsPreflight: false
 
 
-  # ── GAME SERVER (EC2) ─────────────────────────────────────────
+  # ── GAME SERVER (ECS) ─────────────────────────────────────────
+
+  # ECR repository — push the game-server Docker image here before deploying
+  GameServerRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: redeclipse-server
+      LifecyclePolicy:
+        LifecyclePolicyText: |
+          {"rules":[{"rulePriority":1,"description":"Expire untagged images","selection":{"tagStatus":"untagged","countType":"imageCountMoreThan","countNumber":3},"action":{"type":"expire"}}]}
+
+  GameServerCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${AWS::StackName}-game-servers"
+      ClusterSettings:
+        - Name: containerInsights
+          Value: disabled
+
+  # UDP 32768-65535: Docker's dynamic port range for bridge-mode HostPort 0 mappings
   GameServerSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Red Eclipse game server
       SecurityGroupIngress:
         - IpProtocol: udp
-          FromPort: 26000
-          ToPort: 26001
+          FromPort: 32768
+          ToPort: 65535
           CidrIp: 0.0.0.0/0
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           CidrIp: 0.0.0.0/0
 
-  GameServerInstance:
-    Type: AWS::EC2::Instance
+  # ECS-optimised Amazon Linux 2023 AMI — agent pre-installed, registers to cluster via ecs.config
+  # LabInstanceProfile is the AWS Academy EC2 instance profile backed by LabRole
+  GameServerLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
     Properties:
-      InstanceType: t3.micro
-      # Latest Ubuntu 22.04 LTS AMI via Canonical's SSM parameter — always current, no hardcoded ID
-      ImageId: "{{resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id}}"
-      SecurityGroupIds:
-        - !GetAtt GameServerSecurityGroup.GroupId
-      UserData:
-        Fn::Base64: |
-          #!/bin/bash
-          apt-get update -y
-          apt-get install -y software-properties-common
-          add-apt-repository -y universe
-          apt-get update -y
-          apt-get install -y redeclipse
-          cat > /etc/systemd/system/redeclipse-server.service << 'UNIT'
-          [Unit]
-          Description=Red Eclipse Dedicated Server
-          After=network.target
+      LaunchTemplateData:
+        InstanceType: t3.micro
+        ImageId: "{{resolve:ssm:/aws/service/ecs/optimized-ami/amazon-linux-2023/recommended/image_id}}"
+        IamInstanceProfile:
+          Name: LabInstanceProfile
+        SecurityGroupIds:
+          - !GetAtt GameServerSecurityGroup.GroupId
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash
+            echo ECS_CLUSTER=${GameServerCluster} >> /etc/ecs/ecs.config
 
-          [Service]
-          Type=simple
-          Environment=HOME=/root
-          ExecStart=/usr/games/redeclipse -d
-          Restart=always
-          RestartSec=5
+  GameServerASG:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MinSize: "1"
+      MaxSize: "2"
+      DesiredCapacity: "1"
+      LaunchTemplate:
+        LaunchTemplateId: !Ref GameServerLaunchTemplate
+        Version: !GetAtt GameServerLaunchTemplate.LatestVersionNumber
+      AvailabilityZones: !GetAZs ""
 
-          [Install]
-          WantedBy=multi-user.target
-          UNIT
-          systemctl daemon-reload
-          systemctl enable redeclipse-server
-          systemctl start redeclipse-server
+  GameServerCapacityProvider:
+    Type: AWS::ECS::CapacityProvider
+    Properties:
+      AutoScalingGroupProvider:
+        AutoScalingGroupArn: !Ref GameServerASG
+        ManagedScaling:
+          Status: ENABLED
+          TargetCapacity: 80
+        ManagedTerminationProtection: DISABLED
+
+  # Associates the capacity provider with the cluster so ECS can drive ASG scaling
+  GameServerClusterCPAssociation:
+    Type: AWS::ECS::ClusterCapacityProviderAssociations
+    Properties:
+      Cluster: !Ref GameServerCluster
+      CapacityProviders:
+        - !Ref GameServerCapacityProvider
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: !Ref GameServerCapacityProvider
+          Weight: 1
+
+  GameServerLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /ecs/redeclipse-server
+      RetentionInDays: 7
+
+  # bridge + HostPort 0: ECS assigns a random host UDP port per container.
+  # After RunTask, Lambda calls DescribeTasks to read networkBindings[0].hostPort.
+  GameServerTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: redeclipse-server
+      NetworkMode: bridge
+      RequiresCompatibilities:
+        - EC2
+      ExecutionRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      TaskRoleArn: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      ContainerDefinitions:
+        - Name: redeclipse-server
+          Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/redeclipse-server:latest"
+          Memory: 128
+          PortMappings:
+            - ContainerPort: 26000
+              Protocol: udp
+              HostPort: 0
+          Environment:
+            - Name: MAX_PLAYERS
+              Value: "8"
+            - Name: SERVER_PUBLIC
+              Value: "0"
+            - Name: SERVER_DESC
+              Value: !Sub "${AWS::StackName} server"
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref GameServerLogGroup
+              awslogs-region: !Ref AWS::Region
+              awslogs-stream-prefix: game-server
+
+  # Warm pool: 2 servers always ready. binpack fills one instance before triggering ASG scale-out.
+  GameServerWarmPool:
+    Type: AWS::ECS::Service
+    DependsOn: GameServerClusterCPAssociation
+    Properties:
+      ServiceName: game-server-warm-pool
+      Cluster: !Ref GameServerCluster
+      TaskDefinition: !Ref GameServerTaskDefinition
+      DesiredCount: 0
+      CapacityProviderStrategy:
+        - CapacityProvider: !Ref GameServerCapacityProvider
+          Weight: 1
+      PlacementStrategies:
+        - Type: binpack
+          Field: memory
 
   # ── LAMBDA FUNCTIONS ──────────────────────────────────────────
   StartMatchmakingFunction:
@@ -164,8 +252,8 @@ Resources:
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
       Environment:
         Variables:
-          GAME_SERVER_IP: !GetAtt GameServerInstance.PublicIp
-          GAME_SERVER_PORT: "26000"
+          ECS_CLUSTER: !Ref GameServerCluster
+          ECS_TASK_DEFINITION: !Ref GameServerTaskDefinition
       Events:
         MatchmakerSchedule:
           Type: Schedule
@@ -263,6 +351,14 @@ Outputs:
     Description: API Gateway base URL
 
 
-  GameServerPublicIp:
-    Value: !GetAtt GameServerInstance.PublicIp
-    Description: Public IP of the Red Eclipse EC2 game server
+  GameServerClusterName:
+    Value: !Ref GameServerCluster
+    Description: ECS cluster hosting Red Eclipse containers
+
+  GameServerRepositoryUri:
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/redeclipse-server"
+    Description: ECR image URI — tag and push game-server image here before deploying
+
+  GameServerTaskDefinitionArn:
+    Value: !Ref GameServerTaskDefinition
+    Description: ECS task definition ARN for Red Eclipse server containers

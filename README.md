@@ -31,76 +31,123 @@
     - For a real match to complete you need two authenticated players submitting tickets
     - monitor with `sam logs -n MatchStatusPoller --tail`
 
-# AWS Multiplayer Matchmaking Engine: Roadmap & Implementation
+9. Build and push the game server Docker image (requires the stack to be deployed first):
+```bash
+./scripts/push-game-server.sh
+```
 
-This roadmap is designed for a **$50 budget**, leveraging serverless components and AWS Free Tier where possible.
-
----
-
-## 🏗️ Architectural Overview
-The system follows a serverless event-driven pattern to minimize idle costs.
-
-
-
-1.  **Identity:** Amazon Cognito handles player login.
-2.  **Request Layer:** API Gateway + Lambda initiates matchmaking.
-3.  **Engine:** GameLift FlexMatch groups players by ELO/Skill.
-4.  **Hosting:** GameLift Fleet (Spot Instances) hosts the game session.
-5.  **Notification:** SNS + Lambda updates the player's ticket with the server IP.
+10. Scale up the warm pool so 2 game server containers are always ready:
+```bash
+aws ecs update-service \
+  --cluster matchmaking-engine-game-servers \
+  --service game-server-warm-pool \
+  --desired-count 2
+```
 
 ---
 
-## 📅 Phase-by-Phase Roadmap
+# Architecture
 
-### Phase 1: Identity & Player Data (Cost: ~$0)
-* **Amazon Cognito:** Create a User Pool. This provides the JWT tokens needed to authenticate API calls.
-    * *Tip:* The first 50,000 monthly active users are free.
-* **Amazon DynamoDB:** Create a table named `PlayerProfiles`.
-    * **Partition Key:** `UserId` (String).
-    * **Attributes:** `ELO` (Number), `Wins` (Number), `Losses` (Number).
-    * *Tip:* Use "On-Demand" capacity mode to ensure you only pay for actual hits.
+## Overview
 
-### Phase 2: The Matchmaking Request (Cost: ~$0.01/1k requests)
-* **AWS Lambda (StartMatchmaking):** A function that:
-    1.  Receives the `UserId` from the Cognito token.
-    2.  Reads the player's `ELO` from the `PlayerProfiles` table.
-    3.  Calls the `StartMatchmaking` API in GameLift FlexMatch.
-* **Amazon API Gateway:** Create a simple REST endpoint (POST `/match`) to trigger the Lambda.
+The system is serverless and event-driven. Players authenticate via Cognito, submit matchmaking tickets through API Gateway, and get paired by a scheduled Lambda that runs every minute. Once a match is found, a Red Eclipse game server container is allocated from the ECS cluster and its IP + port are written back to the ticket.
 
-### Phase 3: FlexMatch Configuration (Engine Logic)
-* **FlexMatch RuleSet:** Define a JSON rule that dictates how players are grouped.
-    * Example: Find 2 players where `abs(player1.elo - player2.elo) <= 200`.
-* **Matchmaking Configuration:** A GameLift resource that links your RuleSet to a specific GameLift Queue.
+```
+Client → Cognito (JWT) → API Gateway → Lambda → DynamoDB
+                                                     ↓
+                                       EventBridge (every 1 min)
+                                                     ↓
+                                       MatchStatusPoller Lambda
+                                                     ↓
+                                       ECS game server container
+                                       (IP + port → ticket → client)
+```
 
-### Phase 4: Game Server Hosting (Cost: THE CRITICAL PART)
-* **Game Server Executable:** Develop a "Headless" version of your game (Node.js, C#, or C++) that integrates the **GameLift Server SDK**.
-* **GameLift Fleet:**
-    * Upload your server build as a GameLift Script or Build.
-    * **CRITICAL:** Create a **Spot Instance Fleet** (e.g., `c5.large`).
-    * *Budget Alert:* Spot instances are ~70% cheaper than On-Demand. 125 hours are free for new accounts, but **always shut down the fleet when not testing.**
+## API Endpoints
 
-### Phase 5: Notification & Connection (Cost: ~$0)
-* **Amazon SNS:** Configure FlexMatch to send status updates (Success/Failure) to an SNS Topic.
-* **AWS Lambda (TicketProcessor):** Triggered by SNS. It parses the message and saves the Game Server's **IP Address** and **Port** into a `MatchmakingTickets` DynamoDB table.
-* **Client Polling:** The game client polls a `/status` API until it sees the IP address, then connects to the server via UDP/TCP.
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/register` | None | Create account |
+| POST | `/match` | JWT | Start matchmaking |
+| GET | `/match/{ticketId}` | JWT | Poll match status |
+| DELETE | `/match/{ticketId}` | JWT | Cancel matchmaking |
+| GET | `/profile` | JWT | Get player ELO and stats |
+
+## Matchmaking Logic
+
+The `MatchStatusPoller` Lambda runs every minute and scans all `SEARCHING` tickets. It pairs players by ELO using a tolerance that widens over time so players aren't stuck waiting forever:
+
+| Wait time | ELO tolerance |
+|-----------|--------------|
+| 0–60s | ±200 |
+| 60–120s | ±400 |
+| 120s+ | ±800 |
+| 300s+ | `TIMED_OUT` |
+
+**Ticket statuses:** `SEARCHING` → `SUCCEEDED` \| `TIMED_OUT` \| `CANCELLED`
+
+## Game Server Infrastructure (Phase 4)
+
+Game servers run as Docker containers on EC2 instances managed by ECS. Multiple containers can fit on a single t3.micro (~5–6 per instance at 128 MB each).
+
+```
+ECS Cluster
+└── Auto Scaling Group (1–2 × t3.micro)
+    └── EC2 instance
+        ├── Red Eclipse container  (host port: 32800/udp)
+        ├── Red Eclipse container  (host port: 41200/udp)
+        └── Red Eclipse container  (host port: 55000/udp)
+```
+
+**How port assignment works:** Each container uses `HostPort: 0` in the ECS task definition, so Docker assigns a random host UDP port from the range 32768–65535. After starting a container, the matchmaker calls `DescribeTasks` to read the assigned port and `DescribeInstances` to get the EC2 public IP.
+
+**ECS resources:**
+
+| Resource | Purpose |
+|----------|---------|
+| ECR `redeclipse-server` | Stores the Docker image |
+| ECS Cluster | Schedules containers across EC2 instances |
+| Auto Scaling Group | Adds/removes t3.micro instances as needed |
+| Capacity Provider | Connects the ASG to ECS — ECS triggers scale-out when instances are full |
+| Task Definition | Container blueprint: 128 MB RAM, UDP 26000, bridge network |
+| ECS Service (warm pool) | Keeps N containers always running so allocation is instant |
+| CloudWatch Log Group `/ecs/redeclipse-server` | Container stdout logs, 7-day retention |
+
+**Game server container** (`game-server/`): Red Eclipse dedicated server in Docker (Ubuntu 22.04). Configured via environment variables:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `MAX_PLAYERS` | 8 | Players per server |
+| `TIME_LIMIT` | 600 | Match duration (seconds) |
+| `FRAG_LIMIT` | 30 | Kills to end match |
+| `SERVER_DESC` | stack name | Name shown in server browser |
+| `SERVER_PUBLIC` | 0 | 0 = private, 1 = register with master server |
+
+Mode is locked to `0` (deathmatch / free-for-all).
+
+## DynamoDB Tables
+
+**`PlayerProfiles`** — `UserId` (PK), `ELO`, `Wins`, `Losses`
+
+**`MatchmakingTickets`** — `TicketId` (PK), `UserId`, `Status`, `ELO`, `CreatedAt`, `MatchedPlayers`, `ServerIp`, `ServerPort`, `TTL` (1 hour)
 
 ---
 
-## 💰 Budget Management ($50 Limit)
+# Implementation Status
 
-1.  **The "Kill Switch":** Your EC2 instance and GameLift Fleets charge by the hour. When you finish your coding session, **delete the fleet** and **stop the EC2**. Do not just "leave them running."
-2.  **CloudWatch Alarms:** Set a "Billing Alarm" in the AWS Billing Dashboard for **$10**. This ensures you are notified long before you hit your $50 limit.
-3.  **Infrastructure as Code:** Consider using **AWS SAM** or **CDK**. This allows you to "deploy" your whole architecture for testing and "destroy" it completely in 2 minutes when done.
-
----
-
-## 🛠️ Implementation Steps for You Right Now
-
-1.  **Stop your EC2 instance** unless you are actively using it to compile your game server code.
-2.  **Initialize Cognito:** Set up a user pool so you can simulate a "Logged In" player.
-3.  **Write the FlexMatch RuleSet:** Start with a simple JSON that requires exactly 2 players to start a match.
-4.  **Dummy Server:** Don't build the whole game yet. Build a tiny app that just connects to GameLift and says "I am ready."
+| Phase | Description | Status |
+|-------|-------------|--------|
+| 1 | Identity (Cognito), Player data (DynamoDB) | ✅ Complete |
+| 2 | API Gateway + Lambda | ✅ Complete |
+| 3 | Custom ELO matchmaker, ticket CRUD | ✅ Complete |
+| 4 | ECS containerised game servers, dynamic session allocation | 🔧 In progress |
+| 5 | Push notifications to players on match completion | ⬜ TODO |
 
 ---
-*Reference: Based on the architecture described in "Real Life AWS Architecture Examples - Multiplayer Matchmaking Engine" by Be A Better Dev.*
+
+# Budget Notes
+
+Budget: **$50**. The main cost while the stack is deployed is the EC2 instance(s) in the ECS cluster (~$0.01/hr per t3.micro). Lambda, API Gateway, and DynamoDB are negligible or free tier.
+
+Run `sam delete` when not testing to stop all charges.
 
