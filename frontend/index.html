@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cloud Game Matchmaking</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main id="app">
+    <header>
+      <h1>Cloud Game Matchmaking</h1>
+    </header>
+
+    <section id="view-login" class="view">
+      <h2>Sign in</h2>
+      <form id="login-form">
+        <label>Email <input type="email" id="login-email" required autocomplete="username" /></label>
+        <label>Password <input type="password" id="login-password" required autocomplete="current-password" /></label>
+        <button type="submit">Sign in</button>
+      </form>
+      <p id="login-error" class="error"></p>
+      <p id="login-info" class="info"></p>
+      <p><button id="show-register-btn" class="link">Create an account</button></p>
+    </section>
+
+    <section id="view-register" class="view hidden">
+      <h2>Create account</h2>
+      <form id="register-form">
+        <label>Email <input type="email" id="reg-email" required autocomplete="username" /></label>
+        <label>Username <input type="text" id="reg-username" required maxlength="40" /></label>
+        <label>Password <input type="password" id="reg-password" required minlength="8" autocomplete="new-password" /></label>
+        <label>Starting ELO <input type="number" id="reg-elo" required min="0" max="4000" value="1200" /></label>
+        <button type="submit">Register</button>
+      </form>
+      <p id="register-error" class="error"></p>
+      <p><button id="show-login-btn" class="link">Back to sign in</button></p>
+    </section>
+
+    <section id="view-lobby" class="view hidden">
+      <h2>Lobby</h2>
+      <p>Signed in as <strong id="lobby-username"></strong> <span class="muted">(<span id="lobby-email"></span>)</span></p>
+      <ul>
+        <li>ELO: <strong id="lobby-elo">—</strong></li>
+        <li>Wins: <strong id="lobby-wins">—</strong></li>
+        <li>Losses: <strong id="lobby-losses">—</strong></li>
+      </ul>
+      <button id="find-match-btn">Find Match</button>
+      <button id="logout-btn" class="link">Logout</button>
+      <p id="lobby-message" class="info"></p>
+    </section>
+
+    <section id="view-search" class="view hidden">
+      <h2>Searching for a match…</h2>
+      <p>Elapsed: <strong id="search-elapsed">0s</strong></p>
+      <p class="muted">The matchmaker runs every minute — typical wait is up to ~60s.</p>
+      <button id="cancel-btn">Cancel</button>
+    </section>
+
+    <section id="view-found" class="view hidden">
+      <h2>Match found!</h2>
+      <p>Server: <strong id="found-server"></strong></p>
+      <p>Opponent(s):</p>
+      <ul id="found-players"></ul>
+      <p class="muted">
+        Connect via <a href="https://www.redeclipse.net/download" target="_blank" rel="noopener">Red Eclipse</a>:
+        open the in-game console and run <code id="found-connect-cmd"></code>.
+      </p>
+      <button id="connect-btn">Connect to Game</button>
+      <button id="return-btn" class="link">Return to Lobby</button>
+    </section>
+
+    <section id="view-game" class="view hidden">
+      <h2>In game</h2>
+      <p>You are connected to <strong id="game-server"></strong>.</p>
+      <p>Opponent(s):</p>
+      <ul id="game-players"></ul>
+      <p class="muted">(Dummy session — gameplay not rendered in this UI.)</p>
+      <button id="leave-btn">Leave Game</button>
+    </section>
+  </main>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
