@@ -216,7 +216,7 @@ Resources:
       ServiceName: game-server-warm-pool
       Cluster: !Ref GameServerCluster
       TaskDefinition: !Ref GameServerTaskDefinition
-      DesiredCount: 0
+      DesiredCount: 2
       CapacityProviderStrategy:
         - CapacityProvider: !Ref GameServerCapacityProvider
           Weight: 1
