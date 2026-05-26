@@ -33,6 +33,7 @@ ENV SERVER_PORT=26000 \
     SERVER_PUBLIC=0 \
     ADMIN_PASS="admin" \
     SERVER_PASS="" \
+    GAME_MODE="ffa" \
     TIME_LIMIT=600 \
     FRAG_LIMIT=30
 
