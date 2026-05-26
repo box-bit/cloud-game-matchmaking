@@ -13,6 +13,7 @@ ec2    = boto3.client("ec2")
 
 ECS_CLUSTER         = os.environ.get("ECS_CLUSTER", "")
 ECS_TASK_DEFINITION = os.environ.get("ECS_TASK_DEFINITION", "")
+MATCH_SIZE          = int(os.environ.get("MATCH_SIZE", "8"))
 TICKET_TIMEOUT      = 300
 
 
@@ -96,7 +97,6 @@ def get_task_endpoint(task_arn):
 
     task = tasks[0]
 
-    # Find the UDP host port Docker assigned for container port 26000
     host_port = None
     for container in task.get("containers", []):
         for binding in container.get("networkBindings", []):
@@ -110,15 +110,14 @@ def get_task_endpoint(task_arn):
         logger.warning(f"No UDP binding found for task {task_arn}")
         return None, None
 
-    # Container instance ARN → EC2 instance ID → public IP
-    ci_resp        = ecs.describe_container_instances(
+    ci_resp         = ecs.describe_container_instances(
         cluster=ECS_CLUSTER,
         containerInstances=[task["containerInstanceArn"]],
     )
     ec2_instance_id = ci_resp["containerInstances"][0]["ec2InstanceId"]
 
-    ec2_resp   = ec2.describe_instances(InstanceIds=[ec2_instance_id])
-    public_ip  = ec2_resp["Reservations"][0]["Instances"][0].get("PublicIpAddress")
+    ec2_resp  = ec2.describe_instances(InstanceIds=[ec2_instance_id])
+    public_ip = ec2_resp["Reservations"][0]["Instances"][0].get("PublicIpAddress")
 
     if not public_ip:
         logger.warning(f"EC2 instance {ec2_instance_id} has no public IP")
@@ -133,9 +132,9 @@ def allocate_server(in_use_arns, locally_allocated):
     Returns (ip, port, task_arn) or None if allocation fails.
     locally_allocated prevents re-using a task already assigned in this invocation.
     """
-    excluded   = in_use_arns | locally_allocated
-    running    = get_running_task_arns()
-    idle_arn   = next((arn for arn in running if arn not in excluded), None)
+    excluded = in_use_arns | locally_allocated
+    running  = get_running_task_arns()
+    idle_arn = next((arn for arn in running if arn not in excluded), None)
 
     if not idle_arn:
         logger.info("No idle task available — starting a new one")
@@ -166,7 +165,7 @@ def handler(event, context):
             break
         scan_kwargs["ExclusiveStartKey"] = response["LastEvaluatedKey"]
 
-    logger.info(f"Found {len(tickets)} SEARCHING tickets")
+    logger.info(f"Found {len(tickets)} SEARCHING tickets (need {MATCH_SIZE} to form a group)")
 
     now    = time.time()
     active = []
@@ -188,63 +187,75 @@ def handler(event, context):
         else:
             active.append(ticket)
 
+    # Sort by ELO so the sliding window always sees a contiguous ELO range
     active.sort(key=lambda t: int(t.get("ELO", 1000)))
 
     in_use_arns       = get_in_use_task_arns(tickets_table)
     locally_allocated = set()
-    unmatched         = []
+    groups_formed     = 0
 
-    for ticket in active:
-        partner = None
-        for candidate in unmatched:
-            max_dist = max(
-                elo_max_distance(int(ticket.get("CreatedAt", now))),
-                elo_max_distance(int(candidate.get("CreatedAt", now))),
-            )
-            if abs(int(ticket.get("ELO", 1000)) - int(candidate.get("ELO", 1000))) <= max_dist:
-                partner = candidate
-                break
+    # Sliding-window group matching:
+    # Advance i by MATCH_SIZE when a group is formed, by 1 when the front ticket
+    # is incompatible with the window — leaving it for the next poller cycle.
+    i = 0
+    while i + MATCH_SIZE <= len(active):
+        window     = active[i:i + MATCH_SIZE]
+        elo_spread = int(window[-1].get("ELO", 1000)) - int(window[0].get("ELO", 1000))
 
-        if partner:
-            unmatched.remove(partner)
+        # Tolerance is the most lenient of the group: the ticket that has waited
+        # the longest earns the widest window for everyone.
+        tolerance = max(
+            elo_max_distance(int(t.get("CreatedAt", now))) for t in window
+        )
 
-            result = allocate_server(in_use_arns, locally_allocated)
-            if not result:
-                # No server available this cycle — leave both tickets searching
-                logger.warning("No server available, deferring this match to next cycle")
-                unmatched.append(ticket)
-                continue
+        if elo_spread > tolerance:
+            i += 1   # front ticket incompatible — slide past it
+            continue
 
-            server_ip, server_port, task_arn = result
-            locally_allocated.add(task_arn)
-            matched_players = [ticket["UserId"], partner["UserId"]]
+        result = allocate_server(in_use_arns, locally_allocated)
+        if not result:
+            logger.warning("No server available — deferring this group to next cycle")
+            i += MATCH_SIZE
+            continue
 
-            for t in (ticket, partner):
-                try:
-                    tickets_table.update_item(
-                        Key={"TicketId": t["TicketId"]},
-                        UpdateExpression=(
-                            "SET #s = :s, MatchedPlayers = :mp, "
-                            "ServerIp = :ip, ServerPort = :port, TaskArn = :arn"
-                        ),
-                        ConditionExpression=Attr("Status").eq("SEARCHING"),
-                        ExpressionAttributeNames={"#s": "Status"},
-                        ExpressionAttributeValues={
-                            ":s":   "SUCCEEDED",
-                            ":mp":  matched_players,
-                            ":ip":  server_ip,
-                            ":port": server_port,
-                            ":arn": task_arn,
-                        },
-                    )
-                    logger.info(
-                        f"Matched {t['TicketId']} → {server_ip}:{server_port} "
-                        f"(task {task_arn})"
-                    )
-                except dynamo.meta.client.exceptions.ConditionalCheckFailedException:
-                    logger.warning(f"Ticket {t['TicketId']} already updated, skipping")
-        else:
-            unmatched.append(ticket)
+        server_ip, server_port, task_arn = result
+        locally_allocated.add(task_arn)
+        matched_players = [t["UserId"] for t in window]
 
-    logger.info(f"Run complete — {len(unmatched)} ticket(s) still searching")
+        logger.info(
+            f"Forming group of {MATCH_SIZE}: ELO {window[0].get('ELO')}–"
+            f"{window[-1].get('ELO')} (spread {elo_spread}, tol {tolerance}) "
+            f"→ {server_ip}:{server_port}"
+        )
+
+        for ticket in window:
+            try:
+                tickets_table.update_item(
+                    Key={"TicketId": ticket["TicketId"]},
+                    UpdateExpression=(
+                        "SET #s = :s, MatchedPlayers = :mp, "
+                        "ServerIp = :ip, ServerPort = :port, TaskArn = :arn"
+                    ),
+                    ConditionExpression=Attr("Status").eq("SEARCHING"),
+                    ExpressionAttributeNames={"#s": "Status"},
+                    ExpressionAttributeValues={
+                        ":s":    "SUCCEEDED",
+                        ":mp":   matched_players,
+                        ":ip":   server_ip,
+                        ":port": server_port,
+                        ":arn":  task_arn,
+                    },
+                )
+                logger.info(f"Matched ticket {ticket['TicketId']} (ELO {ticket.get('ELO')})")
+            except dynamo.meta.client.exceptions.ConditionalCheckFailedException:
+                logger.warning(f"Ticket {ticket['TicketId']} already updated, skipping")
+
+        groups_formed += 1
+        i += MATCH_SIZE
+
+    still_searching = len(active) - groups_formed * MATCH_SIZE
+    logger.info(
+        f"Run complete — {groups_formed} group(s) matched, "
+        f"{still_searching} ticket(s) still searching"
+    )
     return {"statusCode": 200}

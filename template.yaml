@@ -255,6 +255,7 @@ Resources:
         Variables:
           ECS_CLUSTER: !Ref GameServerCluster
           ECS_TASK_DEFINITION: !Ref GameServerTaskDefinition
+          MATCH_SIZE: "8"
       Events:
         MatchmakerSchedule:
           Type: Schedule
