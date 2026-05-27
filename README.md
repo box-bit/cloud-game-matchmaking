@@ -32,17 +32,13 @@
     - monitor with `sam logs -n MatchStatusPoller --tail`
 
 9. Build and push the game server Docker image (requires the stack to be deployed first):
-```bash
-./scripts/push-game-server.sh
-```
+`./scripts/push-game-server.sh`
 
 10. Run ./scripts/deploy-ui.sh to deploy minimalistic frontend
-```bash
-./scripts/deploye-ui.sh
-```
+`./scripts/deploye-ui.sh`
 
-12. Scale up the warm pool so 2 game server containers are always ready:
-```bash
+11. Scale up the warm pool so 2 game server containers are always ready:
+```
 aws ecs update-service \
   --cluster matchmaking-engine-game-servers \
   --service game-server-warm-pool \
@@ -55,7 +51,7 @@ aws ecs update-service \
 
 ## Overview
 
-The system is serverless and event-driven. Players authenticate via Cognito, submit matchmaking tickets through API Gateway, and get paired by a scheduled Lambda that runs every minute. Once a match is found, a Red Eclipse game server container is allocated from the ECS cluster and its IP + port are written back to the ticket.
+The system is serverless and event-driven. Players authenticate via Cognito, submit matchmaking tickets through API Gateway, and get paired with opponents by a scheduled Lambda that runs every minute. Once a match is found, a Red Eclipse game server container is allocated from the ECS cluster and its IP + port are written back to the ticket.
 
 ```
 Client → Cognito (JWT) → API Gateway → Lambda → DynamoDB
