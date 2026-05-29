@@ -4,7 +4,6 @@ version = 0.1
 stack_name = "matchmaking-engine"
 resolve_s3 = true
 s3_prefix = "matchmaking-engine"
-region = "us-east-1"
 confirm_changeset = true
 capabilities = "CAPABILITY_IAM"
 disable_rollback = true
