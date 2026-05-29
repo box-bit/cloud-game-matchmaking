@@ -208,22 +208,6 @@ Resources:
               awslogs-region: !Ref AWS::Region
               awslogs-stream-prefix: game-server
 
-  # Warm pool: 2 servers always ready. binpack fills one instance before triggering ASG scale-out.
-  GameServerWarmPool:
-    Type: AWS::ECS::Service
-    DependsOn: GameServerClusterCPAssociation
-    Properties:
-      ServiceName: game-server-warm-pool
-      Cluster: !Ref GameServerCluster
-      TaskDefinition: !Ref GameServerTaskDefinition
-      DesiredCount: 0
-      CapacityProviderStrategy:
-        - CapacityProvider: !Ref GameServerCapacityProvider
-          Weight: 1
-      PlacementStrategies:
-        - Type: binpack
-          Field: memory
-
   # ── LAMBDA FUNCTIONS ──────────────────────────────────────────
   StartMatchmakingFunction:
     Type: AWS::Serverless::Function

@@ -54,7 +54,7 @@ cloud-game-matchmaking/
 The whole platform comes up in three layers:
 
 1. **Infrastructure** — `sam deploy` (everything in `template.yaml`).
-2. **Game server image** — build, push to ECR, then run the ECS warm pool.
+2. **Game server image** — build and push to ECR.
 3. **Frontend** — deploy the static lobby to S3.
 
 Then optionally seed test users, get a token, and run any of the E2E tests.
@@ -98,7 +98,6 @@ This creates:
 - the ECS cluster + Auto Scaling Group + capacity provider
 - the ECR repository 
 - the task definition
-- the warm-pool ECS service
 - EventBridge schedule
 - CloudWatch log groups.
 
@@ -115,23 +114,7 @@ This logs in to ECR, runs `docker build` against `game-server/`, tags the
 image as `:latest`, and pushes it. Re-run this whenever you change
 `game-server/Dockerfile` or `entrypoint.sh`.
 
-## Step 3 — Scale the warm pool up
-
-The ECS service `game-server-warm-pool` ships with desired-count = 0 so
-nothing runs by accident. Bring it to 2 so two containers are always
-idling and ready to host a match instantly:
-
-```bash
-aws ecs update-service \
-  --cluster matchmaking-engine-game-servers \
-  --service game-server-warm-pool \
-  --desired-count 2
-```
-
-When you're done testing, set `--desired-count 0` (or `sam delete`) to stop
-EC2 charges.
-
-## Step 4 — Deploy the web frontend (optional but recommended)
+## Step 3 — Deploy the web frontend (optional but recommended)
 
 ```bash
 ./scripts/deploy-ui.sh
@@ -144,7 +127,7 @@ API URL and Cognito client ID), and uploads the contents of `frontend/`.
 
 The script prints the public website URL when it finishes.
 
-## Step 5 — Create a test user and grab a JWT
+## Step 4 — Create a test user and grab a JWT
 
 For ad-hoc curl / script use:
 
@@ -218,11 +201,6 @@ Configuration (number of users, concurrency levels, duration) lives in
 ## Tearing it all down
 
 ```bash
-aws ecs update-service \
-  --cluster matchmaking-engine-game-servers \
-  --service game-server-warm-pool \
-  --desired-count 0       # stop EC2 charges immediately
-
 sam delete                # remove the whole stack when fully done
 ```
 

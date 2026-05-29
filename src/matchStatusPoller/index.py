@@ -28,32 +28,6 @@ def elo_max_distance(created_at):
 
 # ── ECS helpers ───────────────────────────────────────────────────────────────
 
-def get_in_use_task_arns(tickets_table):
-    """Return the set of TaskArns already assigned to active SUCCEEDED tickets."""
-    arns = set()
-    kwargs = {
-        "FilterExpression": Attr("Status").eq("SUCCEEDED") & Attr("TaskArn").exists(),
-        "ProjectionExpression": "TaskArn",
-    }
-    while True:
-        resp = tickets_table.scan(**kwargs)
-        for item in resp.get("Items", []):
-            if "TaskArn" in item:
-                arns.add(item["TaskArn"])
-        if not resp.get("LastEvaluatedKey"):
-            break
-        kwargs["ExclusiveStartKey"] = resp["LastEvaluatedKey"]
-    return arns
-
-
-def get_running_task_arns():
-    """Return all RUNNING task ARNs in the cluster."""
-    arns = []
-    paginator = ecs.get_paginator("list_tasks")
-    for page in paginator.paginate(cluster=ECS_CLUSTER, desiredStatus="RUNNING"):
-        arns.extend(page["taskArns"])
-    return arns
-
 
 def start_new_task():
     """Launch a new ECS task and poll until RUNNING (max 20 s). Returns ARN or None."""
@@ -126,28 +100,16 @@ def get_task_endpoint(task_arn):
     return public_ip, host_port
 
 
-def allocate_server(in_use_arns, locally_allocated):
-    """
-    Pick an idle running task or start a new one.
-    Returns (ip, port, task_arn) or None if allocation fails.
-    locally_allocated prevents re-using a task already assigned in this invocation.
-    """
-    excluded = in_use_arns | locally_allocated
-    running  = get_running_task_arns()
-    idle_arn = next((arn for arn in running if arn not in excluded), None)
-
-    if not idle_arn:
-        logger.info("No idle task available — starting a new one")
-        idle_arn = start_new_task()
-        if not idle_arn:
-            logger.error("Server allocation failed")
-            return None
-
-    ip, port = get_task_endpoint(idle_arn)
+def allocate_server():
+    """Start a new ECS task. Returns (ip, port, task_arn) or None."""
+    task_arn = start_new_task()
+    if not task_arn:
+        logger.error("Server allocation failed")
+        return None
+    ip, port = get_task_endpoint(task_arn)
     if not ip or not port:
         return None
-
-    return ip, port, idle_arn
+    return ip, port, task_arn
 
 
 # ── Main handler ──────────────────────────────────────────────────────────────
@@ -190,9 +152,7 @@ def handler(event, context):
     # Sort by ELO so the sliding window always sees a contiguous ELO range
     active.sort(key=lambda t: int(t.get("ELO", 1000)))
 
-    in_use_arns       = get_in_use_task_arns(tickets_table)
-    locally_allocated = set()
-    groups_formed     = 0
+    groups_formed = 0
 
     # Sliding-window group matching:
     # Advance i by MATCH_SIZE when a group is formed, by 1 when the front ticket
@@ -212,14 +172,13 @@ def handler(event, context):
             i += 1   # front ticket incompatible — slide past it
             continue
 
-        result = allocate_server(in_use_arns, locally_allocated)
+        result = allocate_server()
         if not result:
             logger.warning("No server available — deferring this group to next cycle")
             i += MATCH_SIZE
             continue
 
         server_ip, server_port, task_arn = result
-        locally_allocated.add(task_arn)
         matched_players = [t["UserId"] for t in window]
 
         logger.info(
