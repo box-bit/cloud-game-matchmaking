@@ -1,13 +1,13 @@
 # Fdb version 4
-["biber main"] 1780327545.11427 "main.bcf" "main.bbl" "main" 1780329381.81115 0
-  "main.bcf" 1780329381.56471 108441 f917bdcdfac641dcd828d918f77a39ac "pdflatex"
+["biber main"] 1780327545.11427 "main.bcf" "main.bbl" "main" 1780406731.44831 0
+  "main.bcf" 1780406731.19197 108441 f917bdcdfac641dcd828d918f77a39ac "pdflatex"
   "tau.bib" 1780046731.47183 3372 3edd8b65f271b830afb8ec3eef531336 ""
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1780329379.37111 "/Users/antonia/Desktop/Desktoop/UNI/2SEM/CC/cloud-game-matchmaking/report/main.tex" "main.pdf" "main" 1780329381.81155 2
-  "/Users/antonia/Desktop/Desktoop/UNI/2SEM/CC/cloud-game-matchmaking/report/main.tex" 1780329376.63251 29425 ff9005d80f7eb05c2f47f7626ff4ec68 ""
+["pdflatex"] 1780406728.88187 "/Users/antonia/Desktop/Desktoop/UNI/2SEM/CC/cloud-game-matchmaking/report/main.tex" "main.pdf" "main" 1780406731.44866 2
+  "/Users/antonia/Desktop/Desktoop/UNI/2SEM/CC/cloud-game-matchmaking/report/main.tex" 1780397952.80473 29355 ce2f51c08467c3f9ac99edac3a0810c4 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/fira/fir_d4q673.enc" 1570828436 2978 6d777d1174162fa94ff58f36782f4570 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/fira/fir_iln36p.enc" 1570828436 3071 cfa92ee28d698dd9275559d9d1c3a233 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-mathit.enc" 1610747736 3416 3b99a05a42a4705ec5a5521d2bffa072 ""
@@ -319,12 +319,12 @@
   "/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1711108293.94445 5467645 128b85b7cde5f5edc5cb7f1dd7ff8736 ""
   "/usr/local/texlive/2024/texmf-var/web2c/pdftex/pdflatex.fmt" 1711108248 8221426 e9d38334139222546ad86333b5d0d46e ""
   "/usr/local/texlive/2024/texmf.cnf" 1710266656 577 e590dabc9e28c5b61546e15f63eebcdf ""
-  "cost-analysis.tex" 1780326251.38286 5418 bc3492e7c7fca63a65ab2c5523b6eaac ""
+  "cost-analysis.tex" 1780406726.06912 7218 abf93edcdf92edacf5ecf8b3d1bb0578 ""
   "figures/dia1.pdf" 1780047202.00445 31629 2ed7cea20bd35f42b055a695c6c8010a ""
   "figures/dia3.pdf" 1780320018.06395 80819 7794c6c64343aa8009e7d5671ae7edca ""
-  "main.aux" 1780329381.55834 7872 ec99fe10dd866ce99acff0f2c0f9ebcf "pdflatex"
+  "main.aux" 1780406731.18541 8221 93f8df317d8382bf8e579d2558c7e05e "pdflatex"
   "main.bbl" 1780327547.64762 10120 65850bbb7fba80b475da4b7f67c0b509 "biber main"
-  "main.tex" 1780329376.63251 29425 ff9005d80f7eb05c2f47f7626ff4ec68 ""
+  "main.tex" 1780397952.80473 29355 ce2f51c08467c3f9ac99edac3a0810c4 ""
   "tau-class/tau.cls" 1779258920 16893 ab71582fe42b57ec219535c5dce5201d ""
   "tau-class/taubabel.sty" 1779258920 3672 1ef12c3a95220b69aa6ab01dd68fcd33 ""
   "tau-class/tauenvs.sty" 1779258920 2852 5cd6974872383e20a6bd1c914cc66f94 ""

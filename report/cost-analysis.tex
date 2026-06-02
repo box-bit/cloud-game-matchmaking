@@ -8,61 +8,72 @@
 
     \subsection{Baseline cost}
 
-    By baseline we mean the cost of leaving the stack deployed with almost no players connected. This is not zero, because the Auto Scaling Group keeps one game-server host running so the first match does not wait for a new instance to boot. Table~\ref{tab:baseline-cost} shows that this warm-server choice costs about ten to eleven dollars per month.
+    By baseline we mean the cost of leaving the stack deployed with essentially no players connected. 
+    This is not zero, because we deliberately keep one game server warm so that the first players to arrive do not have to wait for a new instance to boot.
+    The Auto Scaling Group holds a desired capacity of one, so a single \inlinecode{t3.micro} and its attached EBS volume run continuously, while the serverless components stay within their free tiers. 
+    As Table 2 shows, keeping one warm server costs roughly ten dollars per month. We consider this an acceptable price for removing the worst-case start-up delay, measured at about 77 seconds when a new instance must be created, from the common case. 
+    If cost mattered more than responsiveness, the baseline could be eliminated entirely by scaling the group to zero or deleting the stack between sessions.
 
     \begin{table}[t]
         \centering
-        \scriptsize
-        \setlength{\tabcolsep}{3pt}
-        \caption{Estimated baseline monthly cost with one warm server.}
-        \label{tab:baseline-cost}
-        \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.7cm}
-                        >{\raggedright\arraybackslash}p{2.7cm}
-                        r@{}}
+        \footnotesize
+        \caption{Baseline monthly cost with one warm server and no players.}
+        \label{tab:baseline}
+        \begin{tabular}{p{2.3cm} p{3.0cm} r}
             \toprule
-            \textbf{Item} & \textbf{Driver} & \textbf{Monthly} \\
+            \textbf{Item} & \textbf{Calculation} & \textbf{Monthly} \\
             \midrule
             EC2 \texttt{t3.micro} & 730 h $\times$ \$0.0104 & \$7.59 \\
-            EBS root volume & 30 GB gp3 & \$2.40 \\
-            Poller Lambda & 43{,}200 invocations & $\approx$\$0 \\
-            DynamoDB, logs, ECR, S3 & idle storage and small logs & $<$\$1 \\
+            EBS 30 GB gp3 & 30 $\times$ \$0.08 & \$2.40 \\
+            \texttt{MatchStatusPoller} & 43{,}200 invocations & $\approx$\$0 \\
+            DynamoDB & storage + idle scans & $<$\$0.30 \\
+            CloudWatch Logs & minimal volume & $<$\$0.50 \\
+            ECR + S3 & image + static files & $<$\$0.10 \\
             \midrule
             \textbf{Total} & & \textbf{$\approx$\$10--11} \\
             \bottomrule
         \end{tabular}
     \end{table}
 
-    This is the tradeoff behind the warm pool. It removes most of the measured 77 second worst-case allocation delay, but it creates an always-on cost even when nobody is playing. For the project workflow, where we deploy, test, and then delete the stack, the real baseline cost is only a small fraction of a full month.
-
     \subsection{Cost under load}
 
-    To estimate request-driven cost we used one illustrative load scenario: 10{,}000 matchmaking sessions per day for 30 days. One session means a player creates a ticket and follows it to a result. We assume ten API calls per session: one \inlinecode{POST /match}, about eight status polls, and roughly one cancellation or final follow-up call. We also assume two ticket writes per session and eight players per match. These numbers are intentionally simple so the calculation can be scaled up or down.
+    To see how the cost grows with usage we derive every figure from a small set of base assumptions. A \emph{session} is one player starting matchmaking and following it through to a result. We assume:
 
-    \begin{table}[t]
+    \begin{itemize}
+        \item \textbf{10{,}000 sessions per day} --- an illustrative busy day, and the only invented number; every cost below scales linearly with it.
+        \item \textbf{30 days per month.}
+        \item \textbf{10 API requests per session}, made up of one \inlinecode{POST /match}, about eight \inlinecode{GET /match/\{ticketId\}} polls while waiting, and roughly one \inlinecode{DELETE}. The eight polls follow from the system's own timing: the matchmaker runs once a minute, so a ticket waits about thirty seconds on average before it is considered, and the frontend polls every four seconds (\inlinecode{POLL_INTERVAL_MS = 4000}), giving $30 / 4 \approx 8$.
+        \item \textbf{2 ticket writes per session} --- one when the ticket is created, one when it is matched.
+        \item \textbf{8 players per match}, so $10{,}000 / 8 \approx 1{,}250$ matches per day.
+    \end{itemize}
+
+    Every row of Table 3 is then a direct multiplication of these values, with the request and item counts shown in the calculation column so each figure traces back to the assumptions above. The four request-driven rows together come to about twelve dollars per month, which shows how inexpensive the per-request services are even at three million requests. The last two rows are left as ranges because they do not depend on request volume: the scan cost grows with the number of tickets in the table, and the egress cost grows with how long matches run. These two are the only parts of the system that can grow into a large bill.
+
+    \begin{table*}[t]
         \centering
-        \scriptsize
-        \setlength{\tabcolsep}{3pt}
-        \caption{Request-driven monthly cost at 10{,}000 sessions per day.}
-        \label{tab:load-cost}
-        \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.6cm}
-                        >{\raggedright\arraybackslash}p{3.0cm}
-                        r@{}}
+        \footnotesize
+        \caption{Monthly cost under an illustrative load of 10{,}000 sessions per day. Every count is composed from the base assumptions.}
+        \label{tab:load}
+        \begin{tabular}{p{3.4cm} p{8.2cm} r}
             \toprule
-            \textbf{Item} & \textbf{Monthly volume} & \textbf{Cost} \\
+            \textbf{Item} & \textbf{Calculation (from base values)} & \textbf{Monthly} \\
             \midrule
-            API Gateway & 3M requests & \$10.50 \\
-            Lambda requests & 3M invocations & $\approx$\$0.60 \\
-            DynamoDB writes & 600k writes & $\approx$\$0.75 \\
-            DynamoDB reads & 2.4M status reads & $\approx$\$0.30 \\
-            Cognito & 10k MAU, free tier & \$0 \\
-            \midrule
-            \textbf{Subtotal} & excluding scans and game traffic & \textbf{$\approx$\$12} \\
+            API Gateway & $10{,}000 \times 10 \times 30 =$ 3M requests $\times$ \$3.50/M & \$10.50 \\
+            Lambda & 3M requests $\times$ \$0.20/M & $\approx$\$0.60 \\
+            DynamoDB writes & $10{,}000 \times 2 \times 30 =$ 600k writes $\times$ \$1.25/M & $\approx$\$0.75 \\
+            DynamoDB reads (status polling) & $10{,}000 \times 8 \times 30 =$ 2.4M reads $\times$ 0.5 unit $\times$ \$0.25/M & $\approx$\$0.30 \\
+            DynamoDB reads (poller scan) & grows with table size (see Sec.~\ref{sec:cost-risks}) & \$3 to \$50+ \\
+            Cognito & 10{,}000 MAU, below the 50{,}000 free tier & \$0 \\
+            Data transfer out (game traffic) & grows with match duration (see Sec.~\ref{sec:cost-risks}) & \$10 to \$150+ \\
             \bottomrule
         \end{tabular}
-    \end{table}
+    \end{table*}
 
-    The request-driven part is therefore still small compared with the always-on game server. The two costs that can grow much faster are not captured by the neat per-session calculation. First, the current poller uses a DynamoDB \inlinecode{Scan} over the whole ticket table, so it pays for old completed tickets until TTL cleanup removes them. At a few hundred rows this is negligible, but at thousands of retained rows it can become a visible monthly cost. Replacing the scan with a query on a status-based index would make the cost follow the number of waiting tickets instead of the total table size. Second, outbound game traffic is billed by gigabyte after the free allowance, so sustained real gameplay can dominate the bill even if matchmaking itself stays cheap.
+    For the way we actually use the system --- deploying, running a test, and then removing the stack --- real usage is a small fraction of this scenario, and the total cost amounts to no more than a few dollars, comfortably within the project budget.
 
-    \subsection{Summary}
+    \subsection{Cost risks at larger scale}
 
-    The system is inexpensive as a course prototype because almost all control-plane work is serverless and per-request. The main recurring cost is the warm \inlinecode{t3.micro}, at roughly \$10--11 per month with storage. Under an illustrative 10{,}000 sessions per day, the API, Lambda, and direct DynamoDB request costs add only about \$12 per month. At larger scale, the best cost improvement would be to remove the full-table DynamoDB scan; the best performance improvement would be to use a less constrained, non-burstable game-server instance type once the Learner Lab budget is no longer the main limit.
+    Three aspects of the design behave well as a prototype but would become expensive under sustained production load. 
+    First, the matchmaker reads the queue with a DynamoDB \inlinecode{Scan} over the whole \inlinecode{MatchmakingTickets} table. 
+    DynamoDB charges for every item the scan reads, not only those that match the \inlinecode{SEARCHING} filter, so the cost grows with the total table size rather than with the number of players queued. 
+    Because expired tickets are removed by a background process, finished tickets accumulate and inflate the scan, from a few dollars per month at a few hundred rows to over fifty dollars at ten thousand. A secondary index on the status attribute, queried instead of scanned, removes this cost. The outbound game traffic is billed at \$0.09 per gigabyte beyond the first 100 GB each month and is the largest open-ended cost once real matches are played for any length of time, although the two-instance limit on the Auto Scaling Group bounds it. A related non-monetary risk is that the burstable \inlinecode{t3.micro} depletes its CPU credits under sustained load and is then throttled to its baseline performance, degrading the game server without any explicit cost signal.

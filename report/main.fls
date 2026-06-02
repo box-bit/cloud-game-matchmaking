@@ -705,6 +705,8 @@ INPUT ./figures/dia1.pdf
 INPUT ./figures/dia1.pdf
 INPUT ./figures/dia1.pdf
 INPUT ./figures/dia1.pdf
+INPUT /usr/local/texlive/2024/texmf-dist/fonts/vf/public/fira/FiraMono-Regular-tosf-t1.vf
+INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/fira/FiraMono-Regular-tosf-t1--base.tfm
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/stix2-type1/stix2-mathrm.tfm
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/stix2-type1/stix2-mathit.tfm
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/stix2-type1/stix2-mathscr.tfm
@@ -717,8 +719,6 @@ INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/stix2-type1/stix2-math
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/stix2-type1/stix2-mathsf.tfm
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/stix2-type1/stix2-mathsfit.tfm
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/stix2-type1/stix2-mathtt.tfm
-INPUT /usr/local/texlive/2024/texmf-dist/fonts/vf/public/fira/FiraMono-Regular-tosf-t1.vf
-INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/fira/FiraMono-Regular-tosf-t1--base.tfm
 INPUT ./cost-analysis.tex
 INPUT ./cost-analysis.tex
 INPUT ./cost-analysis.tex
