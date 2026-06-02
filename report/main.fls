@@ -489,9 +489,6 @@ INPUT /usr/local/texlive/2024/texmf-dist/tex/generic/babel/locale/en/babel-engli
 INPUT /usr/local/texlive/2024/texmf-dist/tex/generic/babel/locale/en/babel-english.tex
 INPUT /usr/local/texlive/2024/texmf-dist/tex/generic/babel/locale/en/babel-english.tex
 INPUT /usr/local/texlive/2024/texmf-dist/tex/generic/babel/locale/en/babel-en.ini
-INPUT ./main.aux
-INPUT ./main.aux
-INPUT main.aux
 OUTPUT main.aux
 INPUT /usr/local/texlive/2024/texmf-dist/tex/latex/stix2-type1/ls1stix2.fd
 INPUT /usr/local/texlive/2024/texmf-dist/tex/latex/stix2-type1/ls1stix2.fd
@@ -700,11 +697,6 @@ INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/fira/FiraSans-Regular-
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/vf/public/fira/FiraMono-Regular-tosf-t1.vf
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/fira/FiraMono-Regular-tosf-t1--base.tfm
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/fira/fir_d4q673.enc
-INPUT ./figures/dia1.pdf
-INPUT ./figures/dia1.pdf
-INPUT ./figures/dia1.pdf
-INPUT ./figures/dia1.pdf
-INPUT ./figures/dia1.pdf
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/vf/public/fira/FiraMono-Regular-tosf-t1.vf
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/fira/FiraMono-Regular-tosf-t1--base.tfm
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/tfm/public/stix2-type1/stix2-mathrm.tfm
@@ -726,6 +718,11 @@ INPUT ./cost-analysis.tex
 INPUT cost-analysis.tex
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-mathrm.enc
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-mathit.enc
+INPUT ./figures/dia1.pdf
+INPUT ./figures/dia1.pdf
+INPUT ./figures/dia1.pdf
+INPUT ./figures/dia1.pdf
+INPUT ./figures/dia1.pdf
 INPUT /usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-t1sc.enc
 INPUT main.aux
 OUTPUT main.run.xml

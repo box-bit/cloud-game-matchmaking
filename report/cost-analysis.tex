@@ -2,9 +2,7 @@
 
 \section{Cost Analysis}
 
-    Because one of our guiding questions concerned price, we estimated the monthly cost from the resources declared in \inlinecode{template.yaml}. All figures use \inlinecode{us-east-1} prices and should be read as model-based estimates rather than official quotes. The important result is not the exact cent value, but the cost structure: the API, Lambda, DynamoDB, Cognito, S3, ECR, and CloudWatch parts are billed mainly per request or per stored gigabyte, while the game-server layer has a fixed hourly cost whenever at least one EC2 instance is kept warm.
-
-    The stack also avoids several resources that often dominate small AWS bills. It does not use a NAT gateway, load balancer, managed relational database, or cache cluster. This is why the idle system is mostly the price of one \inlinecode{t3.micro} instance plus its root volume.
+    Because one of our guiding questions concerned price, we estimated the monthly cost from the resources declared in \inlinecode{template.yaml}. All figures use \inlinecode{us-east-1} prices and should be read as model-based estimates rather than official quotes. The important result is not the exact cent value, but the cost structure: the API, Lambda, DynamoDB, Cognito, S3, ECR, and CloudWatch parts are billed mainly per request or per stored gigabyte, while the game-server layer has a fixed hourly cost whenever at least one EC2 instance is kept running.
 
     \subsection{Baseline cost}
 
@@ -48,6 +46,7 @@
     \end{itemize}
 
     Every row of Table 3 is then a direct multiplication of these values, with the request and item counts shown in the calculation column so each figure traces back to the assumptions above. The four request-driven rows together come to about twelve dollars per month, which shows how inexpensive the per-request services are even at three million requests. The last two rows are left as ranges because they do not depend on request volume: the scan cost grows with the number of tickets in the table, and the egress cost grows with how long matches run. These two are the only parts of the system that can grow into a large bill.
+    For the way we actually use the system --- deploying, running a test, and then removing the stack --- real usage is a small fraction of this scenario, and the total cost amounts to no more than a few dollars, comfortably within the project budget.
 
     \begin{table*}[t]
         \centering
@@ -68,8 +67,6 @@
             \bottomrule
         \end{tabular}
     \end{table*}
-
-    For the way we actually use the system --- deploying, running a test, and then removing the stack --- real usage is a small fraction of this scenario, and the total cost amounts to no more than a few dollars, comfortably within the project budget.
 
     \subsection{Cost risks at larger scale}
 
