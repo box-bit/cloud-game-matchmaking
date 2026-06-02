@@ -1,15 +1,17 @@
 # Fdb version 4
-["biber main"] 1780046805.07297 "main.bcf" "main.bbl" "main" 1780047639.09803 0
-  "main.bcf" 1780047638.88577 108441 f917bdcdfac641dcd828d918f77a39ac "pdflatex"
+["biber main"] 1780327545.11427 "main.bcf" "main.bbl" "main" 1780329381.81115 0
+  "main.bcf" 1780329381.56471 108441 f917bdcdfac641dcd828d918f77a39ac "pdflatex"
   "tau.bib" 1780046731.47183 3372 3edd8b65f271b830afb8ec3eef531336 ""
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["pdflatex"] 1780047636.82986 "/Users/antonia/Desktop/Desktoop/UNI/2SEM/CC/cloud-game-matchmaking/report/main.tex" "main.pdf" "main" 1780047639.09835 2
-  "/Users/antonia/Desktop/Desktoop/UNI/2SEM/CC/cloud-game-matchmaking/report/main.tex" 1780047634.22347 21721 7a8dde7910b1d0d5120943ba67179fc2 ""
+["pdflatex"] 1780329379.37111 "/Users/antonia/Desktop/Desktoop/UNI/2SEM/CC/cloud-game-matchmaking/report/main.tex" "main.pdf" "main" 1780329381.81155 2
+  "/Users/antonia/Desktop/Desktoop/UNI/2SEM/CC/cloud-game-matchmaking/report/main.tex" 1780329376.63251 29425 ff9005d80f7eb05c2f47f7626ff4ec68 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/fira/fir_d4q673.enc" 1570828436 2978 6d777d1174162fa94ff58f36782f4570 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/fira/fir_iln36p.enc" 1570828436 3071 cfa92ee28d698dd9275559d9d1c3a233 ""
+  "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-mathit.enc" 1610747736 3416 3b99a05a42a4705ec5a5521d2bffa072 ""
+  "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-mathrm.enc" 1610747736 3159 6cd87b3b51190b4d6117d4c2f083ba2e ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-t1.enc" 1610747736 7007 7bfc8f72039f2cce6ca911c3c71db584 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-t1sc.enc" 1610747736 7017 40d76105290f0e4c158c74ad8614d129 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-ts1.enc" 1610747736 2923 6a3d03919e8648554154ee58dc078229 ""
@@ -45,6 +47,7 @@
   "/usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Bold.pfb" 1554498137 485112 0bd86946afd04160ee1229d86cd76902 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Italic.pfb" 1554498137 461495 5a02960affebc68a3b2a3c3ba4882db4 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Regular.pfb" 1554498137 457228 86b22575fa05027949aa646d89908746 ""
+  "/usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Math.pfb" 1610747736 1095268 889498542f05a309f190bb89c64415e5 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Bold.pfb" 1610747736 537414 936ea934798617b12bdc2368f1bc9ddd ""
   "/usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Italic.pfb" 1610747736 452561 61eccfe7853019df7c3d332e353ab0f8 ""
   "/usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Regular.pfb" 1610747736 526217 45f43131563c350dac0de98a3a4109a9 ""
@@ -316,10 +319,12 @@
   "/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1711108293.94445 5467645 128b85b7cde5f5edc5cb7f1dd7ff8736 ""
   "/usr/local/texlive/2024/texmf-var/web2c/pdftex/pdflatex.fmt" 1711108248 8221426 e9d38334139222546ad86333b5d0d46e ""
   "/usr/local/texlive/2024/texmf.cnf" 1710266656 577 e590dabc9e28c5b61546e15f63eebcdf ""
+  "cost-analysis.tex" 1780326251.38286 5418 bc3492e7c7fca63a65ab2c5523b6eaac ""
   "figures/dia1.pdf" 1780047202.00445 31629 2ed7cea20bd35f42b055a695c6c8010a ""
-  "main.aux" 1780047638.87964 4781 a165b8cb5aa00cfe4a2fa438b90611a7 "pdflatex"
-  "main.bbl" 1780046807.54109 10120 65850bbb7fba80b475da4b7f67c0b509 "biber main"
-  "main.tex" 1780047634.22347 21721 7a8dde7910b1d0d5120943ba67179fc2 ""
+  "figures/dia3.pdf" 1780320018.06395 80819 7794c6c64343aa8009e7d5671ae7edca ""
+  "main.aux" 1780329381.55834 7872 ec99fe10dd866ce99acff0f2c0f9ebcf "pdflatex"
+  "main.bbl" 1780327547.64762 10120 65850bbb7fba80b475da4b7f67c0b509 "biber main"
+  "main.tex" 1780329376.63251 29425 ff9005d80f7eb05c2f47f7626ff4ec68 ""
   "tau-class/tau.cls" 1779258920 16893 ab71582fe42b57ec219535c5dce5201d ""
   "tau-class/taubabel.sty" 1779258920 3672 1ef12c3a95220b69aa6ab01dd68fcd33 ""
   "tau-class/tauenvs.sty" 1779258920 2852 5cd6974872383e20a6bd1c914cc66f94 ""

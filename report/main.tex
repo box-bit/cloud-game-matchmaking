@@ -45,9 +45,9 @@
 %----------------------------------------------------------
 
 \begin{abstract}
-    This project studies how a cloud-based backend can support multiplayer game matchmaking. Our main question was: can we build a small but realistic matchmaking engine that authenticates players, groups them by skill, and assigns them to a running game server while keeping the infrastructure mostly serverless and easy to deploy? To answer this, we implemented an AWS system. Players create matchmaking tickets through a REST API, a scheduled matchmaker groups compatible tickets using an Elo-based rule, and each successful group receives the address of a Red Eclipse dedicated server running in a Docker container.
+    This project studies how a cloud-based backend can support multiplayer game matchmaking. Our main question was: can we build a small but realistic matchmaking engine that authenticates players, groups them by skill, and assigns them to a running game server while keeping the infrastructure mostly serverless and easy to deploy? To answer this, we implemented an AWS system. Players create matchmaking tickets through a REST API, a scheduled matchmaker groups compatible tickets using an Elo-based rule, and each successful group receives the address of the dedicated server running the Red Eclipse game in a Docker container.
 
-    The project was partly inspired by an online tutorial video \cite{youtubeMatchmakingVideo} about building multiplayer game infrastructure on AWS, but we adapted the idea to our own simpler architecture because of the limits introduced by the AWS Academy Learner Lab. We tested the system with individual end-to-end tests, an eight-player group test, and a benchmark for starting game servers on ECS/EC2. The implementation showed that a serverless design is a good fit for the ticketing and polling part of matchmaking, while the actual game server still needs long-running compute. The main tradeoff we observed is between simplicity and responsiveness: a scheduled Lambda is easy to operate, but server allocation can still create visible waiting time.
+    The project was partly inspired by an online tutorial video \cite{youtubeMatchmakingVideo} about building multiplayer game infrastructure on AWS, but we adapted the idea to our own architecture because of the limits introduced by the AWS Academy Learner Lab. We tested the system with individual end-to-end tests, an eight-player group test, and a benchmark for starting game servers on ECS/EC2. The implementation showed that a serverless design is a good fit for the ticketing and polling part of matchmaking, while the actual game server still needs long-running compute. The main tradeoff we observed is between simplicity and responsiveness: a scheduled Lambda is easy to operate, but server allocation can still create visible waiting time.
 \end{abstract}
 
 \keywords{cloud computing, distributed systems, multiplayer games, matchmaking, AWS, serverless}
@@ -87,11 +87,9 @@
 
 \section{Infrastructure and Application Design}
 
-    The system is deployed with AWS SAM \cite{awsSamDocs}, so the infrastructure is defined as code in \inlinecode{template.yaml}. SAM is built on CloudFormation and gives a shorter syntax for serverless resources such as Lambda functions and API Gateway routes. This was useful because we had to redeploy often while developing.
-
-    The application has five main parts. First, Amazon Cognito manages users and creates JSON Web Tokens (JWT). Second, API Gateway exposes REST endpoints and validates those JWTs. Third, Lambda functions implement the application logic. Fourth, DynamoDB stores player profiles and matchmaking tickets. Finally, ECS on EC2 runs the actual Red Eclipse server containers.
-
-    The REST API contains these main endpoints:
+    The system is deployed with AWS SAM \cite{awsSamDocs}, so the infrastructure is defined as code in \inlinecode{template.yaml}. 
+    The application has five main parts. First, Amazon Cognito manages users and creates JSON Web Tokens (JWT). 
+    Second, API Gateway validates those JWTs and exposes these REST API endpoints:
 
     \begin{itemize}
         \item \inlinecode{POST /register}: create a Cognito user and a player profile.
@@ -101,10 +99,19 @@
         \item \inlinecode{GET /profile}: return the authenticated player's profile.
     \end{itemize}
 
-    The data model is intentionally small. The \inlinecode{PlayerProfiles} table is keyed by the Cognito user ID and stores username, Elo, wins, and losses. The \inlinecode{MatchmakingTickets} table is keyed by ticket ID and stores the user ID, status, Elo, creation time, matched players, server endpoint, ECS task Amazon Resource Name (ARN), and Time-to-Live (TTL). Ticket statuses move through \inlinecode{SEARCHING}, \inlinecode{SUCCEEDED}, \inlinecode{TIMED_OUT}, or \inlinecode{CANCELLED}.
+    Third, Lambda functions implement the application logic. Fourth, DynamoDB stores player profiles and matchmaking tickets. Finally, ECS on EC2 runs the actual Red Eclipse server containers.
+    Figure 1 shows this architecture as one flow: clients authenticate and call the API, Lambda functions read and update DynamoDB state, and the scheduled poller connects successful matches to ECS game-server containers on EC2.
 
-    The most important component is the \inlinecode{MatchStatusPoller} Lambda. 
-    EventBridge runs it once per minute. The poller scans all \inlinecode{SEARCHING} tickets, removes tickets older than five minutes by marking them \inlinecode{TIMED_OUT}, sorts active tickets by Elo, and then uses a sliding window to find groups of eight players. The allowed Elo spread starts at 200, increases to 400 after one minute, and increases to 800 after two minutes. This is a simple version of matchmaking rule relaxation.
+    \begin{figure*}[t]
+        \centering
+        \includegraphics[width=0.75\textwidth]{figures/dia3.pdf}
+        \caption{AWS architecture of the matchmaking backend and game-server hosting layer.}
+        \label{fig:system-architecture}
+    \end{figure*}
+
+    The \inlinecode{PlayerProfiles} table is keyed by the Cognito user ID and stores username, Elo, wins, and losses. The \inlinecode{MatchmakingTickets} table is keyed by ticket ID and stores the user ID, status, Elo, creation time, matched players, server endpoint, ECS task Amazon Resource Name (ARN), and Time-to-Live (TTL). Ticket statuses move through \inlinecode{SEARCHING}, \inlinecode{SUCCEEDED}, \inlinecode{TIMED_OUT}, or \inlinecode{CANCELLED}.
+
+    The most important component is the \inlinecode{MatchStatusPoller} Lambda, which is run once per minute. The poller scans all \inlinecode{SEARCHING} tickets, removes tickets older than five minutes by marking them \inlinecode{TIMED_OUT}, sorts active tickets by Elo, and then uses a sliding window to find groups of eight players. The allowed Elo spread starts at 200, increases to 400 after one minute, and increases to 800 after two minutes. This is a simple version of matchmaking rule relaxation.
 
     After a valid group is found, the poller allocates a game server. ECS maintains a warm pool of Red Eclipse containers. Each container exposes UDP port 26000 internally, but uses dynamic host port mapping, so Docker assigns a random public UDP port on the EC2 instance. The Lambda function calls ECS and EC2 APIs to find the running task, the host port, and the public IP address of the EC2 instance. This endpoint is then written back into all tickets in the matched group.
 
@@ -120,33 +127,83 @@
 
 \section{Experiments}
 
-    We tested the project in three steps. The first tests checked the normal API workflow with one or two users: registering, logging in, creating a matchmaking ticket, polling the ticket status, and cancelling a ticket. These tests were useful because many early bugs were not in the matching algorithm itself, but in the connections between Cognito, API Gateway, Lambda, and DynamoDB.
+    We tested the project in four steps. The first tests checked the normal API workflow with one or two users: registering, logging in, creating a matchmaking ticket, polling the ticket status, and cancelling a ticket. These tests were useful because many early bugs were not in the matching algorithm itself, but in the connections between Cognito, API Gateway, Lambda, and DynamoDB.
 
     The second experiment was the eight-player group test. The setup script creates eight Cognito users and DynamoDB player profiles with known Elo values. The test script authenticates all players, submits eight matchmaking requests, invokes the poller, and repeatedly calls \inlinecode{GET /match/\{ticketId\}} until all tickets reach a terminal state. Since the final match size is eight, this was our main functional test for the matchmaking logic.
 
     The third experiment measured the game-server startup time. For this test we first scaled the Auto Scaling Group down to one EC2 instance. Then the script increased the desired capacity from one to two, waited until the new instance registered in the ECS cluster, started a first Red Eclipse container on it, and finally started a second container on the same instance. The reason for starting two containers was to separate the one-time Docker image pull from the normal container start time.
 
-    We also wanted to evaluate the full matchmaking goal shown in Figure 1: balancing Elo, player waiting time, and network latency. In the final tests we could only measure Elo grouping and waiting time. We could not realistically emulate players connecting from different geographic regions, so we could not measure the real packet round-trip time between remote players and the EC2 game server. Because of this, latency stayed as a design goal instead of a tested matching rule.
+    We wanted to evaluate the full matchmaking goal shown in Figure 2: balancing Elo, player waiting time, and network latency. In the final tests we could only measure Elo grouping and waiting time. We could not realistically emulate players connecting from different geographic regions, so we could not measure the real packet round-trip time between remote players and the EC2 game server. Because of this, latency stayed as a design goal instead of a tested matching rule.
 
     \begin{figure}[h]
         \centering
-        \includegraphics[width=\linewidth]{figures/dia1.pdf}
+        \includegraphics[width=0.8\linewidth]{figures/dia1.pdf}
         \caption{Initial idea for balancing latency, Elo, and waiting time in matchmaking.}
+        \label{fig:matchmaking-goal}
     \end{figure}
+
+   Lastly, to better understand the practical limits of our ECS game-server hosting layer, we conducted a capacity experiment comparing different EC2 instance configurations. 
+   The main focus was the impact of AWS burstable CPU instances on long-running game-server workloads.
+   
+   AWS \texttt{t3} instances use a CPU-credit mechanism rather than providing their full CPU capacity continuously. 
+   A \texttt{t3.micro} instance has two vCPUs and earns CPU credits whenever its utilization remains below a fixed baseline of 10\% per vCPU (20\% total CPU utilization). 
+   These credits can later be spent to temporarily exceed the baseline and provide burst performance. 
+   However, when the credit balance reaches zero, AWS throttles the instance back to its baseline capacity. 
+   For a \texttt{t3.micro}, this corresponds to approximately 0.4 vCPU of sustained compute power. 
+   In contrast, general-purpose instances such as \texttt{m6i.large} do not use CPU credits and provide their full CPU capacity continuously regardless of previous utilization.
+
+    The first configuration evaluated was our original deployment using a single \texttt{t3.micro} instance hosting seven Red Eclipse containers. 
+    Memory usage remained within the approximately 916 MB of usable memory reported by ECS, confirming that the configuration was feasible from a memory-allocation perspective. 
+    However, CPU measurements suggested that each container consumed approximately 3--5\% CPU, resulting in a combined utilization of roughly 21--35\%. Since this exceeds the 20\% sustained baseline of the instance, CPU credits were continuously depleted. During testing, the observed CPU-credit balance dropped to only 3.8 credits out of a maximum of 288, indicating that the instance was effectively operating with an exhausted credit reserve. Although the configuration achieved the lowest nominal cost per server, it also introduced the risk that all hosted game sessions would be throttled simultaneously once the remaining credits were consumed.
+
+    To evaluate a safer deployment strategy, we considered limiting the same \texttt{t3.micro} instance to four containers. Under the same CPU assumptions, total utilization would remain close to the 20\% baseline. In this scenario, the instance is able to maintain a neutral or slowly recovering credit balance during normal operation while still retaining enough credits to absorb temporary load spikes. The trade-off is lower server density and therefore a higher effective cost per hosted game server, but the risk of CPU throttling is substantially reduced.
+
+    We also examined a \texttt{t3.medium} configuration with four containers. The larger instance benefits from a higher baseline CPU allocation and a larger CPU-credit reserve. This allows it to tolerate sustained bursts for longer periods before throttling occurs. Nevertheless, the underlying CPU-credit mechanism remains unchanged, meaning that sufficiently high continuous load can still eventually exhaust the available credits.
+
+    Finally, we compared these burstable-instance configurations with an \texttt{m6i.large}. Unlike the \texttt{t3} family, the \texttt{m6i.large} provides dedicated CPU resources and therefore cannot be throttled due to credit exhaustion. The instance can host a significantly larger number of game-server containers while maintaining predictable performance characteristics. The disadvantage is its substantially higher monthly cost, which is difficult to justify at low player counts. However, as server density increases, the cost per hosted game server becomes competitive with the smaller \texttt{t3} configurations while eliminating the credit-depletion failure mode entirely.
+
+    The experiment highlights that memory-based container placement alone is insufficient when hosting game servers on burstable EC2 instances. Although seven containers fit within the available memory of a \texttt{t3.micro}, the resulting CPU utilization exceeds the sustained performance baseline and rapidly consumes CPU credits. For the prototype deployment used in this project, limiting placement to four containers per \texttt{t3.micro} represents a reasonable compromise between cost and reliability. For a production deployment, a non-burstable instance type such as \texttt{m6i.large} would provide more predictable and robust performance.
+
 
 \section{Results}
 
-    The functional tests showed that the main workflow works. A player can register, authenticate, create a ticket, and poll it. The matchmaker can group compatible tickets and update them atomically using conditional DynamoDB updates, which prevents overwriting tickets that were cancelled or already changed. In the full-match test, the expected successful result is that both tickets reach \inlinecode{SUCCEEDED} and the API returns the matched players plus the allocated server endpoint.
+A player can register, authenticate, create a ticket, and poll it. The matchmaker can group compatible tickets and update them atomically using conditional DynamoDB updates, which prevents overwriting tickets that were cancelled or already changed. In the full-match test, the expected successful result is that both tickets reach \inlinecode{SUCCEEDED} and the API returns the matched players plus the allocated server endpoint.
 
-    The eight-player test is the most representative experiment for our final design because the configured match size is eight. When the eight test players have close enough Elo values, the poller should form exactly one group and assign exactly one ECS server endpoint to all eight tickets. The script also checks for stale \inlinecode{SEARCHING} tickets before running, because old tickets can affect the sorted matching window. This was an important practical lesson: in a stateful distributed system, leftover test data can change the behaviour of later experiments.
+The eight-player test is the most representative experiment for our final design because the configured match size is eight. When the eight test players have close enough Elo values, the poller should form exactly one group and assign exactly one ECS server endpoint to all eight tickets. The script also checks for stale \inlinecode{SEARCHING} tickets before running, because old tickets can affect the sorted matching window. This was an important practical lesson: in a stateful distributed system, leftover test data can change the behaviour of later experiments.
 
-    The server startup benchmark gave the most concrete timing result. Creating a new EC2 instance took 40 seconds until it was booted and registered in ECS. Starting the first container on the new instance took 37 seconds. This included pulling the Red Eclipse Docker image from ECR. Starting a second container on the same instance took only 4 seconds because the image was already cached locally.
+The server startup benchmark gave the most concrete timing result. Creating a new EC2 instance took 40 seconds until it was booted and registered in ECS. Starting the first container on the new instance took 37 seconds. This included pulling the Red Eclipse Docker image from ECR. Starting a second container on the same instance took only 4 seconds because the image was already cached locally.
 
-    This gives two different player experiences. In the normal case, when an instance already exists and the image is cached, a new game server starts in about 4 seconds. In the worst case, when the Auto Scaling Group must create a new instance, the player has to wait about 77 seconds: 40 seconds for EC2 provisioning plus 37 seconds for the first container. From the difference between the first and second container, we estimate that the image pull itself costs about 33 seconds.
+This gives two different player experiences. In the normal case, when an instance already exists and the image is cached, a new game server starts in about 4 seconds. In the worst case, when the Auto Scaling Group must create a new instance, the player has to wait about 77 seconds: 40 seconds for EC2 provisioning plus 37 seconds for the first container. From the difference between the first and second container, we estimate that the image pull itself costs about 33 seconds.
 
-    The benchmark also showed a limitation of the \inlinecode{t3.micro} instance. The CPU credit balance before and after the short test was reported as 3.8 credits, which is almost empty for this instance type. Because CloudWatch basic monitoring has a five-minute granularity, this exact number should not be overinterpreted for the short benchmark. Still, together with the previous seven-server load test it suggests that running many game servers on one \inlinecode{t3.micro} can drain CPU credits quickly. Once credits are gone, the instance is limited to its baseline CPU performance, which can cause slower game-server behaviour.
+The benchmark also showed a limitation of the \inlinecode{t3.micro} instance. The CPU credit balance before and after the short test was reported as 3.8 credits, which is almost empty for this instance type. Because CloudWatch basic monitoring has a five-minute granularity, this exact number should not be overinterpreted for the short benchmark. Still, together with the previous seven-server load test it suggests that running many game servers on one \inlinecode{t3.micro} can drain CPU credits quickly. Once credits are gone, the instance is limited to its baseline CPU performance, which can cause slower game-server behaviour.
+The capacity experiment showed a second limitation of the current \inlinecode{t3.micro} design. After the seven-server test, the CPU-credit balance was only 3.8 credits out of a maximum of 288. Because CloudWatch basic monitoring has a five-minute granularity, this single value should not be treated as a precise per-container measurement. However, it is a strong warning sign: seven containers using roughly 3--5\% CPU each create a total load of about 21--35\%. A \inlinecode{t3.micro} has two vCPUs and a sustained baseline of 10\% per vCPU, so the effective sustained baseline is about 20\% total CPU. Usage above that baseline consumes CPU credits. Once the credits are gone, AWS limits the instance to its baseline CPU capacity, which can reduce tick rate and create lag for every game server on the same machine.
 
-    Overall, the strongest result is that the complete path works: the serverless part can handle the ticket workflow, the poller can create an eight-player match, and ECS can supply a real game-server process. The weakest result is that the system reacts slowly when it has to create completely new compute capacity.
+\begin{table*}[t]
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \caption{Interpretation of the CPU-credit test and safer game-server density options.}
+    \label{tab:cpu-credit-density}
+    \begin{tabular}{@{}>{\raggedright\arraybackslash}p{3.0cm}
+                    >{\raggedright\arraybackslash}p{3.0cm}
+                    >{\raggedright\arraybackslash}p{4.2cm}
+                    >{\raggedright\arraybackslash}p{5.0cm}@{}}
+        \toprule
+        \textbf{Configuration} & \textbf{Estimated CPU use} & \textbf{Credit behaviour} & \textbf{Interpretation} \\
+        \midrule
+        \texttt{t3.micro}, 7 containers & 21--35\% & Depletes under load & Fits by memory, but exceeds the sustained CPU baseline and risks throttling. \\
+        \texttt{t3.micro}, 4 containers & 12--20\% & Neutral or slowly recovering & Safer prototype limit; it stays close to the baseline when servers are active. \\
+        \texttt{t3.micro}, 3 containers & 9--15\% & Accumulates credits & Conservative limit with headroom for short bursts. \\
+        \texttt{m6i.large}, about 60 containers & Dedicated CPU, no burst credits & No credit depletion model & Better production-style choice: higher monthly cost, but predictable CPU instead of burst throttling. \\
+        \bottomrule
+    \end{tabular}
+\end{table*}
+
+Table 1 gives the practical conclusion. If we keep \inlinecode{t3.micro}, we should cap placement at three or four containers per instance instead of seven. ECS will not infer this limit from memory reservation alone, so it would need to be enforced with an ECS placement constraint, a custom instance attribute, or a different task-placement strategy. For a less budget-constrained deployment, the better answer is to move away from burstable \inlinecode{t3} instances. An \inlinecode{m6i.large} is more expensive, but it provides dedicated CPU capacity and removes the credit-depletion failure mode. In other words, the cheapest configuration has the lowest cost per nominal server, but it is also the least reliable once several games are active at the same time.
+
+Overall, the strongest result is that the complete path works: the serverless part can handle the ticket workflow, the poller can create an eight-player match, and ECS can supply a real game-server process. The weakest result is that the system reacts slowly when it has to create completely new compute capacity.
+
+\input{cost-analysis} 
 
 \section{Discussion}
 
@@ -158,7 +215,7 @@
 
     The tests showed that server allocation is the largest practical problem in the current prototype. If capacity is already available, starting another container on a warmed instance took about 4 seconds, which is acceptable for our demo. If a new EC2 instance is needed, the measured wait becomes about 77 seconds. This is too long for a player who has already been told that a match was found. It also shows that matchmaking latency is not only caused by the matching algorithm. The infrastructure state, especially whether an instance is already running and whether the Docker image is cached, matters a lot.
 
-    The \inlinecode{t3.micro} result is another limitation. It is attractive for a student project because it is cheap and fits inside the Learner Lab budget, but the CPU credit balance showed that it is not very robust when many containers are placed on the same machine. A simple improvement for our prototype would be to keep fewer game servers per \inlinecode{t3.micro}, for example three or four instead of seven. Another possible improvement would be to keep a second warmed instance during tests, so the image is already cached and the worst measured wait disappears. These are not complicated architectural changes, but they make the cost and capacity tradeoff more visible.
+    The \inlinecode{t3.micro} result is another limitation. It is attractive for a student project because it is cheap and fits inside the Learner Lab budget, but the CPU-credit result showed that it is not robust when many containers are placed on the same machine. A simple improvement for our prototype would be to keep fewer game servers per \inlinecode{t3.micro}, for example three or four instead of seven. For a more realistic deployment we would prefer a non-burstable instance such as \inlinecode{m6i.large}: it costs more, but the CPU capacity is predictable and game performance no longer depends on whether the instance has credits left. Another possible improvement would be to keep a second warmed instance during tests, so the image is already cached and the worst measured wait disappears. These are not complicated architectural changes, but they make the cost and capacity tradeoff more visible.
     
 \section{Conclusion}
 

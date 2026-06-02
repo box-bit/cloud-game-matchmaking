@@ -1,0 +1,68 @@
+% Cost Analysis section for the AWS matchmaking report.
+
+\section{Cost Analysis}
+
+    Because one of our guiding questions concerned price, we estimated the monthly cost from the resources declared in \inlinecode{template.yaml}. All figures use \inlinecode{us-east-1} prices and should be read as model-based estimates rather than official quotes. The important result is not the exact cent value, but the cost structure: the API, Lambda, DynamoDB, Cognito, S3, ECR, and CloudWatch parts are billed mainly per request or per stored gigabyte, while the game-server layer has a fixed hourly cost whenever at least one EC2 instance is kept warm.
+
+    The stack also avoids several resources that often dominate small AWS bills. It does not use a NAT gateway, load balancer, managed relational database, or cache cluster. This is why the idle system is mostly the price of one \inlinecode{t3.micro} instance plus its root volume.
+
+    \subsection{Baseline cost}
+
+    By baseline we mean the cost of leaving the stack deployed with almost no players connected. This is not zero, because the Auto Scaling Group keeps one game-server host running so the first match does not wait for a new instance to boot. Table~\ref{tab:baseline-cost} shows that this warm-server choice costs about ten to eleven dollars per month.
+
+    \begin{table}[t]
+        \centering
+        \scriptsize
+        \setlength{\tabcolsep}{3pt}
+        \caption{Estimated baseline monthly cost with one warm server.}
+        \label{tab:baseline-cost}
+        \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.7cm}
+                        >{\raggedright\arraybackslash}p{2.7cm}
+                        r@{}}
+            \toprule
+            \textbf{Item} & \textbf{Driver} & \textbf{Monthly} \\
+            \midrule
+            EC2 \texttt{t3.micro} & 730 h $\times$ \$0.0104 & \$7.59 \\
+            EBS root volume & 30 GB gp3 & \$2.40 \\
+            Poller Lambda & 43{,}200 invocations & $\approx$\$0 \\
+            DynamoDB, logs, ECR, S3 & idle storage and small logs & $<$\$1 \\
+            \midrule
+            \textbf{Total} & & \textbf{$\approx$\$10--11} \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    This is the tradeoff behind the warm pool. It removes most of the measured 77 second worst-case allocation delay, but it creates an always-on cost even when nobody is playing. For the project workflow, where we deploy, test, and then delete the stack, the real baseline cost is only a small fraction of a full month.
+
+    \subsection{Cost under load}
+
+    To estimate request-driven cost we used one illustrative load scenario: 10{,}000 matchmaking sessions per day for 30 days. One session means a player creates a ticket and follows it to a result. We assume ten API calls per session: one \inlinecode{POST /match}, about eight status polls, and roughly one cancellation or final follow-up call. We also assume two ticket writes per session and eight players per match. These numbers are intentionally simple so the calculation can be scaled up or down.
+
+    \begin{table}[t]
+        \centering
+        \scriptsize
+        \setlength{\tabcolsep}{3pt}
+        \caption{Request-driven monthly cost at 10{,}000 sessions per day.}
+        \label{tab:load-cost}
+        \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.6cm}
+                        >{\raggedright\arraybackslash}p{3.0cm}
+                        r@{}}
+            \toprule
+            \textbf{Item} & \textbf{Monthly volume} & \textbf{Cost} \\
+            \midrule
+            API Gateway & 3M requests & \$10.50 \\
+            Lambda requests & 3M invocations & $\approx$\$0.60 \\
+            DynamoDB writes & 600k writes & $\approx$\$0.75 \\
+            DynamoDB reads & 2.4M status reads & $\approx$\$0.30 \\
+            Cognito & 10k MAU, free tier & \$0 \\
+            \midrule
+            \textbf{Subtotal} & excluding scans and game traffic & \textbf{$\approx$\$12} \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    The request-driven part is therefore still small compared with the always-on game server. The two costs that can grow much faster are not captured by the neat per-session calculation. First, the current poller uses a DynamoDB \inlinecode{Scan} over the whole ticket table, so it pays for old completed tickets until TTL cleanup removes them. At a few hundred rows this is negligible, but at thousands of retained rows it can become a visible monthly cost. Replacing the scan with a query on a status-based index would make the cost follow the number of waiting tickets instead of the total table size. Second, outbound game traffic is billed by gigabyte after the free allowance, so sustained real gameplay can dominate the bill even if matchmaking itself stays cheap.
+
+    \subsection{Summary}
+
+    The system is inexpensive as a course prototype because almost all control-plane work is serverless and per-request. The main recurring cost is the warm \inlinecode{t3.micro}, at roughly \$10--11 per month with storage. Under an illustrative 10{,}000 sessions per day, the API, Lambda, and direct DynamoDB request costs add only about \$12 per month. At larger scale, the best cost improvement would be to remove the full-table DynamoDB scan; the best performance improvement would be to use a less constrained, non-burstable game-server instance type once the Learner Lab budget is no longer the main limit.

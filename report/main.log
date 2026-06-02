@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.3.22)  29 MAY 2026 11:40
+This is pdfTeX, Version 3.141592653-2.6-1.40.26 (TeX Live 2024) (preloaded format=pdflatex 2024.3.22)  1 JUN 2026 17:56
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -1488,7 +1488,7 @@ Package csquotes Info: Checking for multilingual support...
 Package csquotes Info: ... found 'babel' package.
 Package csquotes Info: Adjusting default style.
 Package csquotes Info: Redefining alias 'default' -> 'english'.
-No file main.aux.
+(./main.aux)
 \openout1 = `main.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 55.
@@ -1507,7 +1507,7 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 55.
 LaTeX Font Info:    ... okay on input line 55.
 LaTeX Font Info:    Checking defaults for LS1/stix2/m/n on input line 55.
 LaTeX Font Info:    Trying to load font information for LS1+stix2 on input line 55.
-(/usr/local/texlive/2024/texmf-dist/tex/latex/stix2-type1/ls1stix2.fd
+ (/usr/local/texlive/2024/texmf-dist/tex/latex/stix2-type1/ls1stix2.fd
 File: ls1stix2.fd 2018/04/02 v2.0.0-latex stix2 LS1 font definitions
 )
 LaTeX Font Info:    ... okay on input line 55.
@@ -1756,7 +1756,14 @@ Package microtype Info: Character `textflorin ' is missing
 (microtype)             Ignoring protrusion settings for this character.
 
 
-LaTeX Warning: Reference `LastPage' on page 1 undefined on input line 105.
+pdfTeX warning: pdflatex (file ./figures/dia3.pdf): PDF inclusion: found PDF version <1.7>, but at most version <1.5> allowed
+<figures/dia3.pdf, id=57, 570.83301pt x 299.27881pt>
+File: figures/dia3.pdf Graphic file (type pdf)
+<use figures/dia3.pdf>
+Package pdftex.def Info: figures/dia3.pdf  used on input line 107.
+(pdftex.def)             Requested size: 394.782pt x 206.98209pt.
+
+LaTeX Warning: Reference `LastPage' on page 1 undefined on input line 110.
 
 [1{/usr/local/texlive/2024/texmf-var/fonts/map/pdftex/updmap/pdftex.map}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/fira/fir_iln36p.enc}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-t1.enc}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-ts1.enc}
 
@@ -1764,12 +1771,19 @@ LaTeX Warning: Reference `LastPage' on page 1 undefined on input line 105.
 {/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/fira/fir_d4q673.enc}]
 
 pdfTeX warning: pdflatex (file ./figures/dia1.pdf): PDF inclusion: found PDF version <1.7>, but at most version <1.5> allowed
-<figures/dia1.pdf, id=83, 226.7916pt x 185.5732pt>
+<figures/dia1.pdf, id=84, 226.7916pt x 185.5732pt>
 File: figures/dia1.pdf Graphic file (type pdf)
 <use figures/dia1.pdf>
-Package pdftex.def Info: figures/dia1.pdf  used on input line 133.
-(pdftex.def)             Requested size: 258.188pt x 211.27246pt.
-[2 <./figures/dia1.pdf>] [3{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-t1sc.enc}] 
+Package pdftex.def Info: figures/dia1.pdf  used on input line 140.
+(pdftex.def)             Requested size: 206.55118pt x 169.01627pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[2 <./figures/dia3.pdf>] [3 <./figures/dia1.pdf>] (./cost-analysis.tex
+
+LaTeX Warning: Reference `tab:baseline-cost' on page 4 undefined on input line 11.
+
+) [4{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-mathrm.enc}{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-mathit.enc}] [5{/usr/local/texlive/2024/texmf-dist/fonts/enc/dvips/stix2-type1/stix2-t1sc.enc}] 
 enddocument/afterlastpage: lastpage setting LastPage.
 (./main.aux)
  ***********
@@ -1784,7 +1798,7 @@ LaTeX Warning: There were undefined references.
 LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
 
-Package lastpage Warning: Rerun to get the references right on input line 177.
+Package lastpage Warning: Rerun to get the references right on input line 234.
 
 
 Package biblatex Warning: Please (re)run Biber on the file:
@@ -1796,13 +1810,13 @@ Package logreq Info: Writing requests to 'main.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 53726 strings out of 474116
- 1055355 string characters out of 5743682
- 1975187 words of memory out of 5000000
- 74955 multiletter control sequences out of 15000+600000
- 919130 words of font info for 310 fonts, out of 8000000 for 9000
+ 53833 strings out of 474116
+ 1057542 string characters out of 5743682
+ 1973187 words of memory out of 5000000
+ 75033 multiletter control sequences out of 15000+600000
+ 926603 words of font info for 330 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 137i,12n,143p,1075b,1761s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 137i,12n,143p,1075b,1775s stack positions out of 10000i,1000n,20000p,200000b,200000s
 
 pdfTeX warning (dest): name{Hfootnote.3} has been referenced but does not exist, replaced by a fixed one
 
@@ -1812,11 +1826,11 @@ pdfTeX warning (dest): name{Hfootnote.2} has been referenced but does not exist,
 
 pdfTeX warning (dest): name{Hfootnote.1} has been referenced but does not exist, replaced by a fixed one
 
-</usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraMono-Regular.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Bold.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Italic.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Regular.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Bold.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Italic.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Regular.pfb>
-Output written on main.pdf (3 pages, 660245 bytes).
+</usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraMono-Regular.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Bold.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Italic.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/fira/FiraSans-Regular.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Math.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Bold.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Italic.pfb></usr/local/texlive/2024/texmf-dist/fonts/type1/public/stix2-type1/STIX2Text-Regular.pfb>
+Output written on main.pdf (5 pages, 929497 bytes).
 PDF statistics:
- 194 PDF objects out of 1000 (max. 8388607)
- 144 compressed objects within 2 object streams
- 23 named destinations out of 1000 (max. 500000)
- 85218 words of extra memory for PDF output out of 89155 (max. 10000000)
+ 255 PDF objects out of 1000 (max. 8388607)
+ 193 compressed objects within 2 object streams
+ 33 named destinations out of 1000 (max. 500000)
+ 85255 words of extra memory for PDF output out of 89155 (max. 10000000)
 

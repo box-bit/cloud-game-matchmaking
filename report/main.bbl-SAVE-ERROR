@@ -1,0 +1,253 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.2 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated by
+% biber as required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+
+\refsection{0}
+  \datalist[entry]{ynt/global//global/global}
+    \entry{elo1978rating}{book}{}
+      \name{author}{1}{}{%
+        {{hash=ba734edd6a1a96ab7e1903630e8f56f0}{%
+           family={Elo},
+           familyi={E\bibinitperiod},
+           given={Arpad\bibnamedelima E.},
+           giveni={A\bibinitperiod\bibinitdelim E\bibinitperiod}}}%
+      }
+      \list{location}{1}{%
+        {London}%
+      }
+      \list{publisher}{1}{%
+        {Batsford}%
+      }
+      \strng{namehash}{ba734edd6a1a96ab7e1903630e8f56f0}
+      \strng{fullhash}{ba734edd6a1a96ab7e1903630e8f56f0}
+      \strng{bibnamehash}{ba734edd6a1a96ab7e1903630e8f56f0}
+      \strng{authorbibnamehash}{ba734edd6a1a96ab7e1903630e8f56f0}
+      \strng{authornamehash}{ba734edd6a1a96ab7e1903630e8f56f0}
+      \strng{authorfullhash}{ba734edd6a1a96ab7e1903630e8f56f0}
+      \field{sortinit}{1}
+      \field{sortinithash}{4f6aaa89bab872aa0999fec09ff8e98a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{isbn}{0-7134-1860-5}
+      \field{title}{The Rating of Chessplayers, Past and Present}
+      \field{year}{1978}
+    \endentry
+    \entry{agarwal2009matchmaking}{inproceedings}{}
+      \name{author}{2}{}{%
+        {{hash=57af2e22f09e6de3fe786034dd0ec2c6}{%
+           family={Agarwal},
+           familyi={A\bibinitperiod},
+           given={Sharad},
+           giveni={S\bibinitperiod}}}%
+        {{hash=743856372f34d5f8cdac9dfb9606b879}{%
+           family={Lorch},
+           familyi={L\bibinitperiod},
+           given={Jacob\bibnamedelima R.},
+           giveni={J\bibinitperiod\bibinitdelim R\bibinitperiod}}}%
+      }
+      \list{publisher}{1}{%
+        {ACM}%
+      }
+      \strng{namehash}{7b9968740c9cbc80323481099efe5071}
+      \strng{fullhash}{7b9968740c9cbc80323481099efe5071}
+      \strng{bibnamehash}{7b9968740c9cbc80323481099efe5071}
+      \strng{authorbibnamehash}{7b9968740c9cbc80323481099efe5071}
+      \strng{authornamehash}{7b9968740c9cbc80323481099efe5071}
+      \strng{authorfullhash}{7b9968740c9cbc80323481099efe5071}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{booktitle}{Proceedings of the ACM SIGCOMM 2009 Conference on Data Communication}
+      \field{title}{Matchmaking for Online Games and Other Latency-Sensitive Peer-to-Peer Systems}
+      \field{year}{2009}
+      \field{pages}{315\bibrangedash 326}
+      \range{pages}{12}
+      \verb{doi}
+      \verb 10.1145/1592568.1592605
+      \endverb
+      \verb{urlraw}
+      \verb https://www.columbia.edu/~ebk2141/teaching/csci599-sp13/papers/13_geolocation/matchmaking.pdf
+      \endverb
+      \verb{url}
+      \verb https://www.columbia.edu/~ebk2141/teaching/csci599-sp13/papers/13_geolocation/matchmaking.pdf
+      \endverb
+    \endentry
+    \entry{awsFlexMatch2017}{online}{}
+      \name{author}{1}{}{%
+        {{hash=3eb2c1a57a8160029f036e3dcbf84bf1}{%
+           family={{Amazon Web Services}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{fullhash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{bibnamehash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{authorbibnamehash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{authornamehash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{authorfullhash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \field{extraname}{1}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{day}{16}
+      \field{month}{8}
+      \field{title}{Introducing FlexMatch, the Latest Addition to Amazon GameLift's Matchmaking Services}
+      \field{urlday}{27}
+      \field{urlmonth}{5}
+      \field{urlyear}{2026}
+      \field{year}{2017}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://aws.amazon.com/about-aws/whats-new/2017/08/introducing-flexmatch-the-latest-addition-to-amazon-gamelifts-matchmaking-services/
+      \endverb
+      \verb{url}
+      \verb https://aws.amazon.com/about-aws/whats-new/2017/08/introducing-flexmatch-the-latest-addition-to-amazon-gamelifts-matchmaking-services/
+      \endverb
+    \endentry
+    \entry{awsFlexMatch2024}{online}{}
+      \name{author}{1}{}{%
+        {{hash=1672f7905ff0bc21f27645a02d9677f1}{%
+           family={Qin},
+           familyi={Q\bibinitperiod},
+           given={Alexander},
+           giveni={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{1672f7905ff0bc21f27645a02d9677f1}
+      \strng{fullhash}{1672f7905ff0bc21f27645a02d9677f1}
+      \strng{bibnamehash}{1672f7905ff0bc21f27645a02d9677f1}
+      \strng{authorbibnamehash}{1672f7905ff0bc21f27645a02d9677f1}
+      \strng{authornamehash}{1672f7905ff0bc21f27645a02d9677f1}
+      \strng{authorfullhash}{1672f7905ff0bc21f27645a02d9677f1}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{day}{14}
+      \field{month}{3}
+      \field{title}{Fine-tune Online Game Matchmaking with Amazon GameLift FlexMatch Rule Sets and the Amazon GameLift Testing Toolkit}
+      \field{urlday}{27}
+      \field{urlmonth}{5}
+      \field{urlyear}{2026}
+      \field{year}{2024}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://aws.amazon.com/blogs/gametech/fine-tune-online-game-matchmaking-with-amazon-gamelift-flexmatch-rule-sets-and-the-amazon-gamelift-testing-toolkit/
+      \endverb
+      \verb{url}
+      \verb https://aws.amazon.com/blogs/gametech/fine-tune-online-game-matchmaking-with-amazon-gamelift-flexmatch-rule-sets-and-the-amazon-gamelift-testing-toolkit/
+      \endverb
+    \endentry
+    \entry{awsSamDocs}{online}{}
+      \name{author}{1}{}{%
+        {{hash=3eb2c1a57a8160029f036e3dcbf84bf1}{%
+           family={{Amazon Web Services}},
+           familyi={A\bibinitperiod}}}%
+      }
+      \strng{namehash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{fullhash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{bibnamehash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{authorbibnamehash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{authornamehash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \strng{authorfullhash}{3eb2c1a57a8160029f036e3dcbf84bf1}
+      \field{extraname}{2}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{title}{How AWS SAM Works}
+      \field{urlday}{27}
+      \field{urlmonth}{5}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam-overview.html
+      \endverb
+      \verb{url}
+      \verb https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam-overview.html
+      \endverb
+    \endentry
+    \entry{riotLeagueMatchmaking}{online}{}
+      \name{author}{1}{}{%
+        {{hash=f57cf07c1856f8676e754198255ca3bf}{%
+           family={{Riot Games}},
+           familyi={R\bibinitperiod}}}%
+      }
+      \strng{namehash}{f57cf07c1856f8676e754198255ca3bf}
+      \strng{fullhash}{f57cf07c1856f8676e754198255ca3bf}
+      \strng{bibnamehash}{f57cf07c1856f8676e754198255ca3bf}
+      \strng{authorbibnamehash}{f57cf07c1856f8676e754198255ca3bf}
+      \strng{authornamehash}{f57cf07c1856f8676e754198255ca3bf}
+      \strng{authorfullhash}{f57cf07c1856f8676e754198255ca3bf}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{day}{19}
+      \field{month}{3}
+      \field{title}{Matchmaking and Autofill}
+      \field{urlday}{29}
+      \field{urlmonth}{5}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{dateera}{ce}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://support-leagueoflegends.riotgames.com/hc/en-us/articles/201752954-Matchmaking-and-Autofill
+      \endverb
+      \verb{url}
+      \verb https://support-leagueoflegends.riotgames.com/hc/en-us/articles/201752954-Matchmaking-and-Autofill
+      \endverb
+    \endentry
+    \entry{youtubeMatchmakingVideo}{online}{}
+      \name{author}{1}{}{%
+        {{hash=8dd1bae8da2e2408210d0656fbe6b7d1}{%
+           family={{YouTube}},
+           familyi={Y\bibinitperiod}}}%
+      }
+      \strng{namehash}{8dd1bae8da2e2408210d0656fbe6b7d1}
+      \strng{fullhash}{8dd1bae8da2e2408210d0656fbe6b7d1}
+      \strng{bibnamehash}{8dd1bae8da2e2408210d0656fbe6b7d1}
+      \strng{authorbibnamehash}{8dd1bae8da2e2408210d0656fbe6b7d1}
+      \strng{authornamehash}{8dd1bae8da2e2408210d0656fbe6b7d1}
+      \strng{authorfullhash}{8dd1bae8da2e2408210d0656fbe6b7d1}
+      \field{sortinit}{2}
+      \field{sortinithash}{8b555b3791beccb63322c22f3320aa9a}
+      \field{labelnamesource}{author}
+      \field{labeltitlesource}{title}
+      \field{note}{Referenced by the project group as an implementation idea source.}
+      \field{title}{Tutorial video used as practical inspiration for the cloud game matchmaking project}
+      \field{urlday}{27}
+      \field{urlmonth}{5}
+      \field{urlyear}{2026}
+      \field{year}{2026}
+      \field{urldateera}{ce}
+      \verb{urlraw}
+      \verb https://www.youtube.com/watch?v=vitoxDcE70o
+      \endverb
+      \verb{url}
+      \verb https://www.youtube.com/watch?v=vitoxDcE70o
+      \endverb
+    \endentry
+  \enddatalist
+\endrefsection
+\endinput
+
